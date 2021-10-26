@@ -46,9 +46,9 @@ const { fetchJson, create, update, remove } = await api({issuerId, apiKey, priva
 const [app] = await fetchJson('apps');
 
 const appStoreVersion = await create({
-	type: 'appStoreVersions',
-	attributes: { platform: 'IOS', versionString: '1.0.1' },
-	relationships: { app }
+  type: 'appStoreVersions',
+  attributes: { platform: 'IOS', versionString: '1.0.1' },
+  relationships: { app }
 );
 ```
 
@@ -91,29 +91,29 @@ import { stat, readFile } from 'fs/promises';
 import { api } from `node-app-store-connect-api`;
 
 const { fetchJson, create, uploadAsset, pollForUploadSuccess } = 
-	await api({issuerId, apiKey, privateKey});
+  await api({issuerId, apiKey, privateKey});
 
 // in real life, you might have to create your
 // own app, version, localization, and screenshot set
-const app = (await fetchJson('apps'))[0];
-const version = (await fetchJson(
-	app.relationships.appStoreVersions.links.related))[0];
-const l10n = (await fetchJson(
-	version.relationships.appStoreVersionLocalizations.links.related))[0];
-const appScreenshotSet = (await (fetchJson(
-	l10n.relationships.appScreenshots.links.related))[0];
+const [app] = await fetchJson('apps');
+const [version] = await fetchJson(
+  app.relationships.appStoreVersions.links.related);
+const [l10n] = await fetchJson(
+  version.relationships.appStoreVersionLocalizations.links.related);
+const [appScreenshotSet] = await (fetchJson(
+  l10n.relationships.appScreenshots.links.related);
 
 const filePath = '/path/to/myScreenshot.png';
-const fileSize = (await stat(filePath)).size;
+const fileSize = await stat(filePath)).size;
 
 // create the screenshot reservation
 const appScreenshot = await create({
-	type: 'appScreenshots',
-	attributes: {
-		fileName: 'myScreenshot.png',
-		fileSize: fileSize,
-	},
-	relationships: { appScreenshotSet }
+  type: 'appScreenshots',
+  attributes: {
+    fileName: 'myScreenshot.png',
+    fileSize: fileSize,
+  },
+  relationships: { appScreenshotSet }
 }});
 
 // upload the asset
