@@ -52,6 +52,16 @@ const appStoreVersion = await create({
 );
 ```
 
+(Officially, the `relationships` that we submit to Apple aren't supposed to be entire fetched objects; they're supposed to contain just a `data` object containing only the `type` and `id` of the related object. This API takes care of that detail for you, because writing out relationships the official way is much wordier, but you're allowed to write out relationships by hand, if you prefer.)
+
+```js
+const appStoreVersion = await create({
+  type: 'appStoreVersions',
+  attributes: { platform: 'IOS', versionString: '1.0.1' },
+  relationships: { app: { data: { type: "apps", id: app.id } } }
+);
+```
+
 We can also update objects with the `update` function.
 
 ```js
