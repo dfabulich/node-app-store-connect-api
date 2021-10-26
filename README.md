@@ -17,7 +17,7 @@ When you're done, you'll have an issuer ID (like `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxx
 # Usage
 
 ```js
-import { api } from `app-store-connect-api`;
+import { api } from `node-app-store-connect-api`;
 
 const { fetchJson, postJson } = await api({issuerId, apiKey, privateKey});
 
@@ -74,7 +74,7 @@ But the "App Screenshot" object is just a "reservation" object, allowing you to 
 
 ```js
 import { stat, readFile } from 'fs/promises';
-import { api } from `app-store-connect-api`;
+import { api } from `node-app-store-connect-api`;
 
 const { fetchJson, postJson, uploadAsset, pollForUploadSuccess } = 
 	await api({issuerId, apiKey, privateKey});
