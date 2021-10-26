@@ -1,7 +1,7 @@
 {
   "name": "node-app-store-connect-api",
-  "version": "2.0.1",
-  "description": "Node library to interface with the Appstore Connect API",
+  "version": "2.0.2",
+  "description": "Node library to interface with the App Store Connect API",
   "main": "index.mjs",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -12,5 +12,10 @@
     "jsonwebtoken": "^8.5.1",
     "md5": "^2.3.0",
     "node-fetch": "^3.0.0"
+  },
+  "keywords": ["apple", "app store", "appstore"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dfabulich/node-app-store-connect-api"
   }
 }
