@@ -32,69 +32,60 @@ async function upload(bundleId, platform, versionString, locale, screenshotDispl
     */
 
     if (apiKey == "XXXXXXXXXX") {
-        throw new Error("Missing the API key. Configure your key information at the top of the upload-preview.mjs file first.");
+        throw new Error("Missing the API key. Configure your key information at the top of the upload-screenshot.mjs file first.");
     };
 
-    const {fetchJson, postJson, uploadAsset, pollForUploadSuccess} = await api({issuerId, apiKey, privateKey});
+    const {fetchJson, create, uploadAsset, pollForUploadSuccess} = await api({issuerId, apiKey, privateKey});
 
     console.log("Find (or create) app screenshot set.");
 
     // 1. Look up the app by bundle id.
-    const app = (await fetchJson(`apps?filter[bundleId]=${bundleId}`)).data?.[0];
+    const [app] = await fetchJson(`apps?filter[bundleId]=${bundleId}`);
     if (!app) throw new Error(`No app found with bundle id ${bundleId}`);
 
     // 2. Look up the version by platform and version number.
-    const version = (await fetchJson(`apps/${app.id}/appStoreVersions?filter[versionString]=${versionString}&filter[platform]=${platform}`)).data?.[0];
+    const [version] = await fetchJson(`apps/${app.id}/appStoreVersions?filter[versionString]=${versionString}&filter[platform]=${platform}`);
     if (!version) throw new Error(`No app store version found with version ${version}`);
 
     // 3. Get all localizations for the version and look for the requested locale.
-    let localization = (await fetchJson(`appStoreVersions/${version.id}/appStoreVersionLocalizations`)).data
+    let localization = (await fetchJson(`appStoreVersions/${version.id}/appStoreVersionLocalizations`))
         .find(localization => localization.attributes.locale === locale);
 
     // 4. If the requested localization does not exist, create it.
     // Localized attributes are copied from the primary locale so there's no need to worry about them here.
     if (!localization) {
-        localization = (await postJson("appStoreVersionLocalizations", { data: {
+        localization = await create({
             type: "appStoreVersionLocalizations",
             attributes: { locale },
-            relationships: { appStoreVersion: { data: {
-                type: "appStoreVersions",
-                id: version.id,
-            }}}
-        }})).data;
+            relationships: {appStoreVersion: version}
+        });
     }
 
     // 5. Get all available app screenshot sets from the localization.
-    let screenshotSet = (await fetchJson(localization.relationships.appScreenshotSets.links.related)).data
-        .find(screenshotSet => screenshotSet.attributes.screenshotDisplayType === screenshotDisplayType);
+    let appScreenshotSet = (await fetchJson(localization.relationships.appScreenshotSets.links.related))
+        .find(appScreenshotSet => appScreenshotSet.attributes.screenshotDisplayType === screenshotDisplayType);
 
     // 6. If an app screenshot set for the requested type doesn't exist, create it.
-    if (!screenshotSet) {
-        screenshotSet = (await postJson("appScreenshotSets", {data: {
+    if (!appScreenshotSet) {
+        appScreenshotSet = await create({
             type: "appScreenshotSets",
             attributes: { screenshotDisplayType },
-            relationships: { appStoreVersionLocalization: { data: {
-                type: "appStoreVersionLocalizations",
-                id: localization.id,
-            }}}
-        }})).data;
+            relationships: {appStoreVersionLocalization: localization}
+        });
     }
 
     // 7. Reserve an app screenshot in the selected app screenshot set.
     // Tell the API to create a screenshot before uploading the screenshot data.
     console.log("Reserve new app screenshot.");
 
-    const screenshot = (await postJson("appScreenshots", {data: {
+    const screenshot = await create({
         type: "appScreenshots",
         attributes: {
             fileName: basename(filePath),
             fileSize: (await stat(filePath)).size,
         },
-        relationships: { appScreenshotSet: { data: {
-            type: "appScreenshotSets",
-            id: screenshotSet.id,
-        }}}
-    }})).data;
+        relationships: { appScreenshotSet }
+    });
 
     // 8. Upload each part according to the returned upload operations.
     console.log("Upload screenshot asset.");
@@ -109,7 +100,7 @@ async function upload(bundleId, platform, versionString, locale, screenshotDispl
 }
 
 if (process.argv.length !== 8) {
-    console.error("usage: node upload-screenshot.mjs bundleId platform version locale screenshotDisployType filePath");
+    console.error("usage: node upload-screenshot.mjs bundleId platform version locale screenshotDisplayType filePath");
     console.error(" e.g.  com.example.myapp IOS 1.0.2 en-US APP_IPHONE_65 /path/to/screenshot.png")
     process.exit(1);
 }

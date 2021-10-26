@@ -12,7 +12,7 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
 } = {}) {
     if (!privateKey) privateKey = await fs.readFile(`${homedir()}/.appstoreconnect/private_keys/AuthKey_${apiKey}.p8`);
 
-    function getBearerToken(issuerId, apiKey, privateKey) {
+    function _getBearerToken(issuerId, apiKey, privateKey) {
         const NOW = Math.round((new Date()).getTime() / 1000);
 
         const PAYLOAD = {
@@ -39,7 +39,7 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
         return bearerToken;
     }
 
-    const bearerToken = getBearerToken(issuerId, apiKey, privateKey);
+    const bearerToken = _getBearerToken(issuerId, apiKey, privateKey);
 
     const authFetch = async function authFetch(url, options) {
         if (!options) options = {};
@@ -62,7 +62,7 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
         const isJson = (contentType === 'application/json' || contentType === 'application/vnd.api+json');
         if (response.ok) {
             if (isJson) {
-                return JSON.parse(text);
+                return JSON.parse(text).data;
             } else {
                 return text;
             }
@@ -88,8 +88,33 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
         })
     }
 
-    async function patchJson(url, data, options) {
-        return postJson(url, data, { method: 'PATCH', ...options });
+    // allow users to pass in entire objects, but just send down types and ids
+    function _trimRelationships(relationships) {
+        const output = {};
+        for (const [key, value] of Object.entries(relationships)) {
+            if (Array.isArray(value)) {
+                output[key] = value.map(relation => ({ data: { type: relation.type, id: relation.id } }));
+            } else {
+                output[key] = { data: { type: value.type, id: value.id } };
+            }
+        }
+        return output;
+    }
+
+    async function create({type, attributes, relationships}) {
+        const data = { type, attributes };
+        if (relationships) data.relationships = _trimRelationships(relationships);
+        return postJson(type, {data});
+    }
+
+    async function update(data, {attributes, relationships}) {
+        const requestData = { type: data.type, id: data.id, attributes };
+        if (relationships) requestData.relationships = _trimRelationships(relationships);
+        return postJson(`${data.type}/${data.id}`, { data: requestData }, {method: 'PATCH'});
+    }
+
+    async function remove(data) {
+        return postJson(`${data.type}/${data.id}`, {method: 'DELETE'});
     }
 
     async function uploadAsset(assetData, buffer, maxTriesPerPart = 10) {
@@ -122,16 +147,10 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
                 }
             }
         }));
-        await patchJson(`${assetData.type}/${assetData.id}`, {
-            data: {
-                type: assetData.type,
-                id: assetData.id,
-                attributes: {
-                    uploaded: true,
-                    sourceFileChecksum,
-                }
-            }
-        });
+        await update(assetData, { attributes: {
+            uploaded: true,
+            sourceFileChecksum,
+        }});
     }
 
     async function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
@@ -154,9 +173,9 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
                     continue;
                 }
             }
-            const assetDeliveryState = assetData?.data?.attributes?.assetDeliveryState;
+            const assetDeliveryState = assetData?.attributes?.assetDeliveryState;
             const state = assetDeliveryState?.state;
-            if (!state) throw new Error(`${logHeader}${assetUrl} couldn't find data.attributes.assetDeliveryState.state: ${JSON.stringify(assetData)}`);
+            if (!state) throw new Error(`${logHeader}${assetUrl} couldn't find attributes.assetDeliveryState.state: ${JSON.stringify(assetData)}`);
             if (state === 'COMPLETE') return;
             if (state === 'FAILED') throw new Error(`${logHeader}${assetUrl} upload failed: ${JSON.stringify(assetDeliveryState.errors)}`);
             //console.log(`${logHeader} ${state} ${assetUrl}`);
@@ -164,6 +183,6 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
         }
     }
 
-    return { fetch: authFetch, fetchJson, postJson, patchJson, uploadAsset, pollForUploadSuccess };
+    return { fetch: authFetch, fetchJson, postJson, create, update, remove, uploadAsset, pollForUploadSuccess };
 }
 

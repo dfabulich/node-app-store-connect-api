@@ -35,66 +35,57 @@ async function upload(bundleId, platform, versionString, locale, previewType, fi
         throw new Error("Missing the API key. Configure your key information at the top of the upload-preview.mjs file first.");
     };
 
-    const {fetchJson, postJson, uploadAsset, pollForUploadSuccess} = await api({issuerId, apiKey, privateKey});
+    const {fetchJson, create, uploadAsset, pollForUploadSuccess} = await api({issuerId, apiKey, privateKey});
 
     console.log("Find (or create) app preview set.");
 
     // 1. Look up the app by bundle id.
-    const app = (await fetchJson(`apps?filter[bundleId]=${bundleId}`)).data?.[0];
+    const [app] = await fetchJson(`apps?filter[bundleId]=${bundleId}`);
     if (!app) throw new Error(`No app found with bundle id ${bundleId}`);
 
     // 2. Look up the version by platform and version number.
-    const version = (await fetchJson(`apps/${app.id}/appStoreVersions?filter[versionString]=${versionString}&filter[platform]=${platform}`)).data?.[0];
+    const [version] = await fetchJson(`apps/${app.id}/appStoreVersions?filter[versionString]=${versionString}&filter[platform]=${platform}`);
     if (!version) throw new Error(`No app store version found with version ${version}`);
 
     // 3. Get all localizations for the version and look for the requested locale.
-    let localization = (await fetchJson(`appStoreVersions/${version.id}/appStoreVersionLocalizations`)).data
+    let localization = (await fetchJson(`appStoreVersions/${version.id}/appStoreVersionLocalizations`))
         .find(localization => localization.attributes.locale === locale);
 
     // 4. If the requested localization does not exist, create it.
     // Localized attributes are copied from the primary locale so there's no need to worry about them here.
     if (!localization) {
-        localization = (await postJson("appStoreVersionLocalizations", { data: {
+        localization = await create({
             type: "appStoreVersionLocalizations",
             attributes: { locale },
-            relationships: { appStoreVersion: { data: {
-                type: "appStoreVersions",
-                id: version.id,
-            }}}
-        }})).data;
+            relationships: {appStoreVersion: version}
+        });
     }
 
     // 5. Get all available app preview sets from the localization.
-    let previewSet = (await fetchJson(localization.relationships.appPreviewSets.links.related)).data
-        .find(previewSet => previewSet.attributes.previewType === previewType);
+    let appPreviewSet = (await fetchJson(localization.relationships.appPreviewSets.links.related))
+        .find(appPreviewSet => appPreviewSet.attributes.previewType === previewType);
 
     // 6. If an app preview set for the requested type doesn't exist, create it.
-    if (!previewSet) {
-        previewSet = (await postJson("appPreviewSets", {data: {
+    if (!appPreviewSet) {
+        appPreviewSet = await create({
             type: "appPreviewSets",
             attributes: { previewType },
-            relationships: { appStoreVersionLocalization: { data: {
-                type: "appStoreVersionLocalizations",
-                id: localization.id,
-            }}}
-        }})).data;
+            relationships: {appStoreVersionLocalization: localization}
+        });
     }
 
     // 7. Reserve an app preview in the selected app preview set.
     // Tell the API to create a preview before uploading the preview data.
-    console.log("Reserve new app preview.")
+    console.log("Reserve new app preview.");
 
-    const preview = (await postJson("appPreviews", {data: {
+    const preview = await create({
         type: "appPreviews",
         attributes: {
             fileName: basename(filePath),
             fileSize: (await stat(filePath)).size,
         },
-        relationships: { appPreviewSet: { data: {
-            type: "appPreviewSets",
-            id: previewSet.id,
-        }}}
-    }})).data;
+        relationships: { appPreviewSet }
+    });
 
     // 8. Upload each part according to the returned upload operations.
     console.log("Upload preview asset.");
@@ -104,7 +95,7 @@ async function upload(bundleId, platform, versionString, locale, previewType, fi
     console.log("Asset uploaded. Poll for success.");
     await pollForUploadSuccess(preview.links.self);
 
-    console.log(`App Preview successfully uploaded to: ${preview.links.self}`);
+    console.log(`App preview successfully uploaded to: ${preview.links.self}`);
     console.log("You can verify success in App Store Connect or using the API.");
 }
 
