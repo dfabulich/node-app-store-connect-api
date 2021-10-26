@@ -92,7 +92,9 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
     function _trimRelationships(relationships) {
         const output = {};
         for (const [key, value] of Object.entries(relationships)) {
-            if (Array.isArray(value)) {
+            if (typeof value === 'object' && value && 'data' in value) {
+                output[key] = value;
+            } else if (Array.isArray(value)) {
                 output[key] = value.map(relation => ({ data: { type: relation.type, id: relation.id } }));
             } else {
                 output[key] = { data: { type: value.type, id: value.id } };
