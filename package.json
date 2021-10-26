@@ -1,0 +1,16 @@
+{
+  "name": "node-app-store-connect-api",
+  "version": "1.0.0",
+  "description": "Node library to interface with the Appstore Connect API",
+  "main": "index.mjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Dan Fabulich <dan@fabulich.com>",
+  "license": "ISC",
+  "dependencies": {
+    "jsonwebtoken": "^8.5.1",
+    "md5": "^2.3.0",
+    "node-fetch": "^3.0.0"
+  }
+}
