@@ -116,7 +116,7 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
     }
 
     async function remove(data) {
-        return postJson(`${data.type}/${data.id}`, {method: 'DELETE'});
+        return fetchJson(`${data.type}/${data.id}`, {method: 'DELETE'});
     }
 
     async function uploadAsset(assetData, buffer, maxTriesPerPart = 10) {
