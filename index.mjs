@@ -45,6 +45,7 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
         if (!options) options = {};
         if (!options.headers) options.headers = {};
         options.headers.Authorization = `Bearer ${bearerToken}`;
+        if (!/^https:\/\//.test(url)) url = `${urlBase}/${url}`;
         // try-try-again; sometimes Apple rejects perfectly good bearer tokens
         let response;
         for (let i = 0; i < 5; i++) {
@@ -55,7 +56,6 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
     }
 
     async function fetchJson(url, options) {
-        if (!/^https:\/\//.test(url)) url = `${urlBase}/${url}`;
         const response = await authFetch(url, options);
         const text = await response.text();
         const contentType = response.headers.get('content-type');
