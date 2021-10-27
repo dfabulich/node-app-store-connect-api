@@ -132,7 +132,7 @@ await uploadAsset(appScreenshot, await readFile(filePath));
 await pollForUploadSuccess(appScreenshot.links.self);
 ```
 
-**That's a lot of work.** Check out the working samples in the `samples` directory of this repository.
+**That's a lot of work.** Check out the working samples in the [`samples`](https://github.com/dfabulich/node-app-store-connect-api/tree/main/samples) directory of this repository.
 
 ## Pagination
 
