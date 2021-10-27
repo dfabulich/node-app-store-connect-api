@@ -56,6 +56,10 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
     }
 
     async function fetchJson(url, options) {
+        const inclusions = options?.inclusions;
+        if (inclusions && inclusions !== true && inclusions !== 'tree') {
+            throw new Error(`inclusions parameter '${inclusions}' must be either boolean true or a string 'tree'`);
+        }
         const response = await authFetch(url, options);
         const text = await response.text();
         const contentType = response.headers.get('content-type');
@@ -65,7 +69,25 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
             if (isJson) {
                 const result = JSON.parse(text);
                 if (crawlAllPages && Array.isArray(result.data) && result.links.next) {
-                    return result.data.concat(await fetchJson(result.links.next, options));
+                    if (inclusions) {
+                        const otherResults = await fetchJson(result.links.next, {...options, inclusions: true});
+                        result.data = result.data.concat(otherResults.data);
+                        if (otherResults.included) {
+                            result.included = (result.included || []).concat(otherResults.included);
+                        }
+                    } else {
+                        return result.data.concat(await fetchJson(result.links.next, options));
+                    }
+                }
+                if (inclusions === 'tree') {
+                    const included = {};
+                    for (const data of result.included || []) {
+                        if (!included[data.type]) included[data.type] = {};
+                        included[data.type][data.id] = data;
+                    }
+                    return { data: result.data, included };
+                } else if (inclusions) {
+                    return { data: result.data, included: result.included };
                 } else {
                     return result.data;
                 }

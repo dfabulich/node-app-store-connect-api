@@ -149,3 +149,131 @@ But, instead, consider using a `limit` parameter to limit the number of results:
 ```js
 const apps = await fetchJson('apps?limit=1');
 ```
+
+## Data and Inclusions
+
+By default, the App Store Connect API endpoint returns all data in a `data` key, like this:
+
+```js
+{
+  data: [ /* actual data here */ ]
+}
+```
+
+As a convenience, by default, this library automagically returns the `data` array directly, not wrapped in a `{data}` object. Otherwise, you'd have to do this, which can be annoying:
+
+```js
+const apps = (await fetchJson('apps')).data;
+// or this:
+const {data: apps} = await fetchJson('apps');
+```
+
+But there is information outside the `data` key that you might want/need. If you choose to use an `include` query parameter, like `apps?include=appStoreVersions`, then the App Store Connect API will return that data as a separate `included` key, outside the `data` response:
+
+```js
+{
+  data: [
+    {
+      type: "apps",
+      id: 123,
+      attributes: { /* ... */ },
+      relationships: {
+        appStoreVersions: { data: [
+          { type: "appStoreVersions", id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" }
+        ]}
+      }
+    }
+  ],
+  included: [
+    {
+      type: "appStoreVersions",
+      id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      attributes: { /* ... */ },
+      relationships: { /* ... */ }
+    }
+  ]
+}
+```
+
+**This library will skip/ignore the `included` data by default.**
+
+You can pass an `inclusions` option to `fetchJson` to make it include the `data` key and the `included` key.
+
+```js
+const {data: apps, included: appStoreVersions} =
+  await fetchJson('apps?include=appStoreVersions', {inclusions: true});
+```
+
+In our experience, having inclusions be an array is not ideal, especially if you include multiple kinds of objects, like this: `fetchJson('apps?include=builds,appStoreVersions')`
+
+So, we've also provided an `{inclusions: 'tree'}` option. If you use that, we'll provide the inclusions as a nested JSON object, where the top-level keys are type names (like `builds` and `appStoreVersions`), mapping to another JSON object, mapping IDs to objects.
+
+The result of `fetchJson('apps?include=builds,appStoreVersions', {inclusions: 'tree'})` would look like this:
+
+```js
+{
+  data: [ /* ... */ ],
+  included: {
+    builds: {
+      "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx": {
+        type: "builds",
+        id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+        attributes: { /* ... */ },
+        relationships: { /* ... */ }
+      }
+    },
+    appStoreVersions: {
+      "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx": {
+        type: "appStoreVersions",
+        id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+        attributes: { /* ... */ },
+        relationships: { /* ... */ }
+      }
+    }
+  }
+}
+```
+
+Handling inclusions as a tree makes it easier to map from `relationships` to the `included` objects.
+
+```js
+const {data: apps, included} =
+  await fetchJson('apps?include=builds,appStoreVersions', {inclusions: 'tree'});
+for (const app of apps) {
+  const versionStrings = app.relationships.appStoreVersions.data
+    .map(rel => included.appStoreVersions[rel.id])
+    .map(appStoreVersion => appStoreVersion.attributes.versionString);
+  const buildVersions = app.relationships.builds.data
+    .map(rel => included.builds[rel.id])
+    .map(build => build.attributes.version);
+  console.log({name: app.attributes.name, versionStrings, buildVersions});
+}
+```
+
+## Raw Requests and Responses
+
+App Store Connect API responses also include a `links` section and a `meta` section used mostly for pagination, if you're interested in those. (You typically don't need them, because our API will paginate for you.)
+
+If you want access to the data exactly as App Store Connect provided it, circumventing all of our "helpful" conveniences, the API provides a raw `fetch` function. The `fetch` function follows the rules of the standard `fetch` API, but we automatically add the `Authorization` header, and prepend `https://api.appstoreconnect.apple.com/v1` on relative URLs.
+
+```js
+import { api } from `node-app-store-connect-api`;
+
+const { fetch } = await api({issuerId, apiKey, privateKey});
+
+// read the raw JSON from a fetch request
+const { data: apps, included: appStoreVersions, links, meta } =
+  await fetch('apps?include=appStoreVersions').then(r=>r.json());
+
+// create an appStoreVersion the long way
+const appId = apps[0].id;
+const { appStoreVersion } = await fetch('/appStoreVersions', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ data: {
+    type: 'appStoreVersions',
+    attributes: { platform: 'IOS', versionString: '1.0.1' },
+    relationships: { app: { data: { type: "apps", id: appId } } }
+  }})
+}).then(r=>r.json());
+```
