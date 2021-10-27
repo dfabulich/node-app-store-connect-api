@@ -143,3 +143,9 @@ This API automatically crawls all pages in a response by default. If you'd like 
 ```js
 const apps = await fetchJson('apps', { crawlAllPages: false });
 ```
+
+But, instead, consider using a `limit` parameter to limit the number of results:
+
+```js
+const apps = await fetchJson('apps?limit=1');
+```
