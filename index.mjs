@@ -60,9 +60,15 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
         const text = await response.text();
         const contentType = response.headers.get('content-type');
         const isJson = (contentType === 'application/json' || contentType === 'application/vnd.api+json');
+        const crawlAllPages = options?.crawlAllPages ?? true;
         if (response.ok) {
             if (isJson) {
-                return JSON.parse(text).data;
+                const result = JSON.parse(text);
+                if (crawlAllPages && Array.isArray(result.data) && result.links.next) {
+                    return result.data.concat(await fetchJson(result.links.next, options));
+                } else {
+                    return result.data;
+                }
             } else {
                 return text;
             }

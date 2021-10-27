@@ -133,3 +133,13 @@ await pollForUploadSuccess(appScreenshot.links.self);
 ```
 
 **That's a lot of work.** Check out the working samples in the `samples` directory of this repository.
+
+## Pagination
+
+The App Store Connect API can return data in multiple pages. You're meant to request each page one at a time, using the data from the `links` section.
+
+This API automatically crawls all pages in a response by default. If you'd like that not to happen, you can pass an object containing options to `fetchJson` like this:
+
+```js
+const apps = await fetchJson('apps', { crawlAllPages: false });
+```
