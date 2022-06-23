@@ -6,11 +6,11 @@ import fetch from 'node-fetch';
 
 // issuerId and apiKey from https://appstoreconnect.apple.com/access/api
 // p8 file was generated initially, and somebody stored it in ~/.appstoreconnect/private_keys (iTMSTransporter?)
-export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, privateKey,
-    urlBase = "https://api.appstoreconnect.apple.com/v1",
+export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, privateKey, version = 1, urlBase,
     tokenExpiresInSeconds = 1200
 } = {}) {
     if (!privateKey) privateKey = await fs.readFile(`${homedir()}/.appstoreconnect/private_keys/AuthKey_${apiKey}.p8`);
+    if (!urlBase) urlBase = `https://api.appstoreconnect.apple.com/v${version}`;
 
     function _getBearerToken(issuerId, apiKey, privateKey) {
         const NOW = Math.round((new Date()).getTime() / 1000);
