@@ -7,7 +7,7 @@ import fetch from 'node-fetch';
 // issuerId and apiKey from https://appstoreconnect.apple.com/access/api
 // p8 file was generated initially, and somebody stored it in ~/.appstoreconnect/private_keys (iTMSTransporter?)
 export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, privateKey, version = 1, urlBase,
-    tokenExpiresInSeconds = 1200, automaticRetries = 5, logRequests = false
+    tokenExpiresInSeconds = 1200, automaticRetries = 10, logRequests = false
 } = {}) {
     if (!privateKey) privateKey = await fs.readFile(`${homedir()}/.appstoreconnect/private_keys/AuthKey_${apiKey}.p8`);
     if (!urlBase) urlBase = `https://api.appstoreconnect.apple.com`;
