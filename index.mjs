@@ -10,7 +10,7 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
     tokenExpiresInSeconds = 1200
 } = {}) {
     if (!privateKey) privateKey = await fs.readFile(`${homedir()}/.appstoreconnect/private_keys/AuthKey_${apiKey}.p8`);
-    if (!urlBase) urlBase = `https://api.appstoreconnect.apple.com/v${version}`;
+    if (!urlBase) urlBase = `https://api.appstoreconnect.apple.com`;
 
     function _getBearerToken(issuerId, apiKey, privateKey) {
         const NOW = Math.round((new Date()).getTime() / 1000);
@@ -45,7 +45,18 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
         if (!options) options = {};
         if (!options.headers) options.headers = {};
         options.headers.Authorization = `Bearer ${bearerToken}`;
-        if (!/^https:\/\//.test(url)) url = `${urlBase}/${url}`;
+        if (!/^https:\/\//.test(url)) {
+            // strip leading slash
+            url = url.replace(/^\//, "");
+            if (/^v\d+\//.test(url)) {
+                // URL includes version number
+                url = `${urlBase}/${url}`;
+            } else {
+                // No version number; add our own
+                const v = options.version ?? version;
+                url = `${urlBase}/v${v}/${url}`;
+            }
+        }
         // try-try-again; sometimes Apple rejects perfectly good bearer tokens
         let response;
         for (let i = 0; i < 5; i++) {
@@ -131,23 +142,23 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
         return output;
     }
 
-    async function create({type, attributes, relationships}) {
+    async function create({type, attributes, relationships, version}) {
         const data = { type, attributes };
         if (relationships) data.relationships = _trimRelationships(relationships);
-        return postJson(type, {data});
+        return postJson(type, {data}, {version});
     }
 
-    async function update(data, {attributes, relationships}) {
+    async function update(data, {attributes, relationships, version}) {
         const requestData = { type: data.type, id: data.id, attributes };
         if (relationships) requestData.relationships = _trimRelationships(relationships);
-        return postJson(`${data.type}/${data.id}`, { data: requestData }, {method: 'PATCH'});
+        return postJson(`${data.type}/${data.id}`, { data: requestData }, {version, method: 'PATCH'});
     }
 
-    async function remove(data) {
-        return fetchJson(`${data.type}/${data.id}`, {method: 'DELETE'});
+    async function remove(data, {version}) {
+        return fetchJson(`${data.type}/${data.id}`, {version, method: 'DELETE'});
     }
 
-    async function uploadAsset(assetData, buffer, maxTriesPerPart = 10) {
+    async function uploadAsset(assetData, buffer, maxTriesPerPart = 10, version) {
         const targetStart = 0;
         const sourceFileChecksum = md5(buffer);
         await Promise.all(assetData.attributes.uploadOperations.map(async (uploadOperation, i) => {
@@ -177,7 +188,7 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
                 }
             }
         }));
-        await update(assetData, { attributes: {
+        await update(assetData, { version, attributes: {
             uploaded: true,
             sourceFileChecksum,
         }});

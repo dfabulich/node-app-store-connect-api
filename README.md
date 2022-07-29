@@ -35,6 +35,13 @@ console.log(apps);
 
 You'll need your app's numeric "app ID" to use the API; the `apps` endpoint will provide it, or you can get it directly from the App Store Connect web site.
 
+Note that some APIs require you to pass an unusual version number, e.g. `v2/inAppPurchases`; you can specify a version number like this:
+
+```js
+const inAppPurchase = await fetchJson('inAppPurchases/12345678', {version: 2});
+console.log(inAppPurchase);
+```
+
 ## Creating, updating, and removing a new App Store version
 
 We create objects with the `create` function. It constructs a create request (a `POST`). It uses the "type" as the URL, and it allows you to pass in a data object as a relationship.
@@ -62,6 +69,17 @@ const appStoreVersion = await create({
 );
 ```
 
+Note that some APIs require you to pass an unusual version number, e.g. `v2/inAppPurchases`; you must do that by adding version number as the `version`.
+
+```js
+const inAppPurchase = await create({
+  type: 'inAppPurchases',
+  attributes: { name: "test", productId: "com.example.test", inAppPurchaseType: "CONSUMABLE"},
+  relationships: { app },
+  version: 2
+});
+```
+
 We can also update objects with the `update` function.
 
 ```js
@@ -76,6 +94,13 @@ await remove(appStoreVersion);
 // or, delete by ID, if you don't have the entire object:
 
 await remove({ type: 'appStoreVersions', id: appStoreVersionId });
+```
+
+When updating or removing objects with unusual version numbers, e.g. `v2/inAppPurchases`, you must pass the `version` number in options.
+
+```js
+await update(inAppPurchase, { attributes: { name: "Test 2" }, version: 2});
+await remove(inAppPurchase, { version: 2 });
 ```
 
 ## Uploading an asset (screenshots, app previews)
@@ -267,7 +292,7 @@ const { data: apps, included: appStoreVersions, links, meta } =
 
 // create an appStoreVersion the long way
 const appId = apps[0].id;
-const { appStoreVersion } = await fetch('/appStoreVersions', {
+const { appStoreVersion } = await fetch('appStoreVersions', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ data: {
