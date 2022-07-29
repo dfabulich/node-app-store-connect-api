@@ -7,7 +7,7 @@ import fetch from 'node-fetch';
 // issuerId and apiKey from https://appstoreconnect.apple.com/access/api
 // p8 file was generated initially, and somebody stored it in ~/.appstoreconnect/private_keys (iTMSTransporter?)
 export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, privateKey, version = 1, urlBase,
-    tokenExpiresInSeconds = 1200
+    tokenExpiresInSeconds = 1200, automaticRetries = 5
 } = {}) {
     if (!privateKey) privateKey = await fs.readFile(`${homedir()}/.appstoreconnect/private_keys/AuthKey_${apiKey}.p8`);
     if (!urlBase) urlBase = `https://api.appstoreconnect.apple.com`;
@@ -45,6 +45,7 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
         if (!options) options = {};
         if (!options.headers) options.headers = {};
         options.headers.Authorization = `Bearer ${bearerToken}`;
+        const retries = options.automaticRetries ?? automaticRetries;
         if (!/^https:\/\//.test(url)) {
             // strip leading slash
             url = url.replace(/^\//, "");
@@ -59,7 +60,7 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
         }
         // try-try-again; sometimes Apple rejects perfectly good bearer tokens
         let response;
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < retries; i++) {
             // console.log({url});
             response = await fetch(url, options);
             if (response.status != 401 && response.status != 429 && response.status != 500) return response;
