@@ -275,6 +275,61 @@ for (const app of apps) {
 }
 ```
 
+## Working with In-App Purchases
+
+In-app purchases are _really_ tough to work with. They sometimes (but not always) require using `/v2` URLs, and the way they store prices is quite confusing.
+
+Query for all IAPs for your app like this:
+
+```js
+const inAppPurchases = fetchJson(`apps/${app.id}/inAppPurchasesV2`);
+```
+
+### IAP Price Information
+
+Getting all prices is a pain in the butt. `inAppPurchases` objects are related to `iapPriceSchedule` objects, but those are nothing but `relationships` links to `manualPrices`.
+
+And each "manual price" `inAppPurchasePrices` has its own territory (there are 175 territories), so if you query for all prices for an IAP, you're going to get 175 price objects. Worse, the territory and the "price point" of `inAppPurchasePrices` objects is _hidden_ unless you explicitly `include` them with inclusions. So, to explore all manual prices for a given IAP, you'll do it like this:
+
+```js
+const [inAppPurchase] = fetchJson(`apps/${app.id}/inAppPurchasesV2`);
+const { data: inAppPurchasePrices, included } = fetchJson(`inAppPurchasePriceSchedules/${inAppPurchase.id}/manualPrices?include=inAppPurchasePricePoint,territory`)
+```
+
+But it's very unlikely that you actually want to explore all manual prices for a given IAP; you probably just want price tiers. The easiest way to do that is to filter to a single territory (e.g. `USA`).
+
+```js
+const [inAppPurchase] = fetchJson(`apps/${app.id}/inAppPurchasesV2`);
+const { data: inAppPurchasePrices, included } = fetchJson(`inAppPurchasePriceSchedules/${inAppPurchase.id}/manualPrices?include=inAppPurchasePricePoint&filter[territory]=USA`,
+  { inclusions: 'tree' });
+```
+
+That will return one price object per entry on the price schedule, plus one with `startDate: null` which is the current latest price.
+
+So, if you want tho current latest price for an IAP, you'd do it like this:
+
+```js
+const [inAppPurchase] = fetchJson(`apps/${app.id}/inAppPurchasesV2`);
+const { data: inAppPurchasePrices, included } = fetchJson(`inAppPurchasePriceSchedules/${inAppPurchase.id}/manualPrices?include=inAppPurchasePricePoint&filter[territory]=USA`,
+  { inclusions: 'tree' });
+const currentPriceObject = inAppPurchasePrices.filter(price => price.attributes.startDate === null)[0];
+const currentPricePoint = included.inAppPurchasePricePoints[currentPriceObject.relationships.inAppPurchasePricePoint.data.id];
+
+const { priceTier, customerPrice } = currentPricePoint.data;
+```
+
+### Creating an IAP
+
+Creating an IAP requires a `/v2` URL, so you'd do it like this, with `version: 2`:
+
+```js
+const inAppPurchase = await create({
+  type: 'inAppPurchases',
+  attributes: { name: "test", productId: "com.example.test", inAppPurchaseType: "CONSUMABLE"},
+  relationships: { app },
+  version: 2
+});
+```
 ## Raw Requests and Responses
 
 App Store Connect API responses also include a `links` section and a `meta` section used mostly for pagination, if you're interested in those. (You typically don't need them, because our API will paginate for you.)
