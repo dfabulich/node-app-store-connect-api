@@ -61,7 +61,7 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
         }
         // try-try-again; sometimes Apple rejects perfectly good bearer tokens
         let response;
-        for (let i = 0; i < retries; i++) {
+        for (let i = 0; i < (retries+1); i++) {
             if (log) console.log(`node-app-store-connect-api: requesting ${url}`);
             response = await fetch(url, options);
             if (response.status != 401 && response.status != 429 && response.status != 500) return response;
