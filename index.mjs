@@ -63,7 +63,16 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
         let response;
         for (let i = 0; i < (retries+1); i++) {
             if (log) console.log(`node-app-store-connect-api: requesting ${url}`);
-            response = await fetch(url, options);
+            try {
+                response = await fetch(url, options);
+            } catch (e) {
+                if (e.code === 'ETIMEDOUT') {
+                    if (log) console.log(`node-app-store-connect-api: timed out ${url}`);
+                    if (i === retries) throw e;
+                } else {
+                    throw e;
+                }
+            }
             if (response.status != 401 && response.status != 429 && response.status != 500) return response;
             if (log) console.log(`node-app-store-connect-api: failed with ${response.status} ${url}`);
         }
