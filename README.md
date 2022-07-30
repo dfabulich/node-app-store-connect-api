@@ -149,7 +149,7 @@ const appScreenshot = await create({
     fileSize: fileSize,
   },
   relationships: { appScreenshotSet }
-}});
+});
 
 // upload the asset
 await uploadAsset(appScreenshot, await readFile(filePath));
@@ -282,7 +282,7 @@ In-app purchases are _really_ tough to work with. They sometimes (but not always
 Query for all IAPs for your app like this:
 
 ```js
-const inAppPurchases = fetchJson(`apps/${app.id}/inAppPurchasesV2`);
+const inAppPurchases = await fetchJson(`apps/${app.id}/inAppPurchasesV2`);
 ```
 
 ### IAP Price Information
@@ -292,30 +292,50 @@ Getting all prices is a pain in the butt. `inAppPurchases` objects are related t
 And each "manual price" `inAppPurchasePrices` has its own territory (there are 175 territories), so if you query for all prices for an IAP, you're going to get 175 price objects. Worse, the territory and the "price point" of `inAppPurchasePrices` objects is _hidden_ unless you explicitly `include` them with inclusions. So, to explore all manual prices for a given IAP, you'll do it like this:
 
 ```js
-const [inAppPurchase] = fetchJson(`apps/${app.id}/inAppPurchasesV2`);
-const { data: inAppPurchasePrices, included } = fetchJson(`inAppPurchasePriceSchedules/${inAppPurchase.id}/manualPrices?include=inAppPurchasePricePoint,territory`)
+const [inAppPurchase] = await fetchJson(`apps/${app.id}/inAppPurchasesV2`);
+const { data: inAppPurchasePrices, included } = await fetchJson(`inAppPurchasePriceSchedules/${inAppPurchase.id}/manualPrices?include=inAppPurchasePricePoint,territory`)
 ```
 
 But it's very unlikely that you actually want to explore all manual prices for a given IAP; you probably just want price tiers. The easiest way to do that is to filter to a single territory (e.g. `USA`).
 
 ```js
-const [inAppPurchase] = fetchJson(`apps/${app.id}/inAppPurchasesV2`);
-const { data: inAppPurchasePrices, included } = fetchJson(`inAppPurchasePriceSchedules/${inAppPurchase.id}/manualPrices?include=inAppPurchasePricePoint&filter[territory]=USA`,
+const [inAppPurchase] = await fetchJson(`apps/${app.id}/inAppPurchasesV2`);
+const { data: inAppPurchasePrices, included } = await fetchJson(`inAppPurchasePriceSchedules/${inAppPurchase.id}/manualPrices?include=inAppPurchasePricePoint&filter[territory]=USA`,
   { inclusions: 'tree' });
 ```
 
-That will return one price object per entry on the price schedule, plus one with `startDate: null` which is the current latest price.
+That's supposed to return one price object per entry on the price schedule. Usually (but not always!) there's an additional one with `startDate: null`. According to Apple, that's supposed to be the current live price, but in my experience, it's often missing, and, in many cases, the price object with `startDate: null` often isn't the actual current live price. But, worst of all, sometimes it _only_ returns a price object with `startDate: null`, so you _must_ use it in that case.
 
 So, if you want tho current latest price for an IAP, you'd do it like this:
 
 ```js
-const [inAppPurchase] = fetchJson(`apps/${app.id}/inAppPurchasesV2`);
-const { data: inAppPurchasePrices, included } = fetchJson(`inAppPurchasePriceSchedules/${inAppPurchase.id}/manualPrices?include=inAppPurchasePricePoint&filter[territory]=USA`,
-  { inclusions: 'tree' });
-const currentPriceObject = inAppPurchasePrices.filter(price => price.attributes.startDate === null)[0];
-const currentPricePoint = included.inAppPurchasePricePoints[currentPriceObject.relationships.inAppPurchasePricePoint.data.id];
+async function readPriceForIosIap(iap) {
+  const { data: inAppPurchasePrices, included } = await fetchJson(
+    `inAppPurchasePriceSchedules/${iap.id}/manualPrices?include=inAppPurchasePricePoint&filter[territory]=USA`,
+    { inclusions: 'tree' }
+  );
+	
+  let currentPriceObject = inAppPurchasePrices.filter(
+    price => price.attributes.startDate
+    && new Date(price.attributes.startDate).getTime() < Date.now()
+  ).sort((a, b) => b.attributes.startDate.localeCompare(a.attributes.startDate))[0];
+	
+  if (!currentPriceObject) {
+		if (inAppPurchasePrices.length === 1) {
+			currentPriceObject = inAppPurchasePrices[0];
+		} else {
+			throw new Error(`Couldn't find a valid price for IAP ${iap.id} ${iap.attributes.productId} ${JSON.stringify(inAppPurchasePrices, null, 2)}`);
+		}
+	}
 
-const { priceTier, customerPrice } = currentPricePoint.data;
+  const currentPricePoint = included.inAppPurchasePricePoints[
+    currentPriceObject.relationships.inAppPurchasePricePoint.data.id
+  ];
+
+  return currentPricePoint;
+}
+
+const { priceTier, customerPrice } = (await readPriceForIosIap(inAppPurchase)).attributes;
 ```
 
 ### Creating an IAP
