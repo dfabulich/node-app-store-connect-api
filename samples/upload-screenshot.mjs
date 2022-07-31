@@ -35,21 +35,22 @@ async function upload(bundleId, platform, versionString, locale, screenshotDispl
         throw new Error("Missing the API key. Configure your key information at the top of the upload-screenshot.mjs file first.");
     };
 
-    const {fetchJson, create, uploadAsset, pollForUploadSuccess} = await api({issuerId, apiKey, privateKey});
+    const {read, readAll, create, uploadAsset, pollForUploadSuccess} = await api({issuerId, apiKey, privateKey});
 
     console.log("Find (or create) app screenshot set.");
 
     // 1. Look up the app by bundle id.
-    const [app] = await fetchJson(`apps?filter[bundleId]=${bundleId}`);
+    const { data: [app] } = await read(`apps?filter[bundleId]=${bundleId}&limit=1`);
     if (!app) throw new Error(`No app found with bundle id ${bundleId}`);
 
     // 2. Look up the version by platform and version number.
-    const [version] = await fetchJson(`apps/${app.id}/appStoreVersions?filter[versionString]=${versionString}&filter[platform]=${platform}`);
+    const { data: [version] } = await read(`apps/${app.id}/appStoreVersions?filter[versionString]=${versionString}&filter[platform]=${platform}&limit=1`);
     if (!version) throw new Error(`No app store version found with version ${version}`);
 
     // 3. Get all localizations for the version and look for the requested locale.
-    let localization = (await fetchJson(`appStoreVersions/${version.id}/appStoreVersionLocalizations`))
-        .find(localization => localization.attributes.locale === locale);
+    let { data: localizations } = await readAll(`appStoreVersions/${version.id}/appStoreVersionLocalizations`);
+    // note that appStoreVersionLocalizations doesn't support filtering by locale; we have to do it ourselves, client-side.
+    let localization = localizations.find(localization => localization.attributes.locale === locale);
 
     // 4. If the requested localization does not exist, create it.
     // Localized attributes are copied from the primary locale so there's no need to worry about them here.
@@ -62,8 +63,8 @@ async function upload(bundleId, platform, versionString, locale, screenshotDispl
     }
 
     // 5. Get all available app screenshot sets from the localization.
-    let appScreenshotSet = (await fetchJson(localization.relationships.appScreenshotSets.links.related))
-        .find(appScreenshotSet => appScreenshotSet.attributes.screenshotDisplayType === screenshotDisplayType);
+    let { data: appScreenshotSets } = await readAll(localization.relationships.appScreenshotSets.links.related);
+    let appScreenshotSet = appScreenshotSets.find(appScreenshotSet => appScreenshotSet.attributes.screenshotDisplayType === screenshotDisplayType);
 
     // 6. If an app screenshot set for the requested type doesn't exist, create it.
     if (!appScreenshotSet) {

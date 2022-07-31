@@ -12,24 +12,28 @@ You'll have to start by [creating an API key](https://developer.apple.com/docume
 
 When you're done, you'll have an issuer ID (like `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`), an API key (like `XXXXXXXXXX`) and a private key file.
 
-**Keep your private keys private.** Store them securely, outside of your git repository. If you use Apple's Transporter tool, it recommends storing private keys in your home directory, in a file named like `~/.appstoreconnect/private_keys/AuthKey_XXXXXXXXXX.p8` (where that `XXXXXXXXXX` is your API key). If you store your private key in that standard location, you don't have to pass us a `privateKey`; we'll autodetect your key from there.
+**Keep your private keys private.** Store them securely, outside of your git repository. If you store your private key in `~/.appstoreconnect/private_keys/AuthKey_XXXXXXXXXX.p8` (where that `XXXXXXXXXX` is your API key), you don't have to pass us a `privateKey`; we'll autodetect your key from there.
 
 # Usage
 
 ```js
 import { api } from `node-app-store-connect-api`;
 
-const { fetchJson, create, update } = await api({issuerId, apiKey, privateKey});
+const { read, readAll, create, update, remove } = await api({issuerId, apiKey, privateKey});
 
 // log all apps
-const apps = await fetchJson('https://api.appstoreconnect.apple.com/v1/apps'));
+const { data: apps } = await readAll('https://api.appstoreconnect.apple.com/v1/apps'));
 console.log(apps);
 ```
+
+The `readAll()` function returns a `Promise` for an object containing `data` (returned by the request) and an optional `included` object. (See the "Data and Inclusions" section below for more details on that.)
+
+When using this API, you'll want to make heavy use of [destructuring assignment](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment). In the example above, we're declaring a variable `apps` and setting it to the value of the `data` object in the response.
 
 You can use an absolute URL, or, at your convenience, you can omit the `https://api.appstoreconnect.apple.com/v1/` part of the URL.
 
 ```js
-const apps = await fetchJson('apps');
+const { data: apps } = await readAll('apps');
 console.log(apps);
 ```
 
@@ -38,8 +42,137 @@ You'll need your app's numeric "app ID" to use the API; the `apps` endpoint will
 Note that some APIs require you to pass an unusual version number, e.g. `v2/inAppPurchases`; you can specify a version number like this:
 
 ```js
-const inAppPurchase = await fetchJson('inAppPurchases/12345678', {version: 2});
+const { data: inAppPurchase } = await readAll('inAppPurchases/12345678', { version: 2 });
 console.log(inAppPurchase);
+```
+
+## Pagination: `read()` vs. `readAll()`
+
+The App Store Connect API can return data in multiple pages. You're meant to request each page one at a time, using the data from the `links` section.
+
+`readAll()` automatically crawls all pages in a response by default. If you'd like that not to happen, you can use the `read()` function instead:
+
+```js
+const { data: apps } = await read('apps');
+```
+
+When using `read()`, consider using a `limit` parameter to limit the number of results:
+
+```js
+const { data: [app] } = await read('apps?limit=1');
+```
+
+When making requests that return a single object, e.g. `'apps/123456789'`, `read()` and `readAll()` do the same thing. It might be more readable to use `read()` in that case, but that's up to you.
+
+App Store Connect API `read()` responses may also include a `links` section and a `meta` section used mostly for pagination, if you're interested in those. (You typically don't need them, because `readAll()` will paginate for you.)
+
+### `readAll()` and `?limit=N` affects performance, _not_ total results
+
+Most App Store Connect APIs allow a `limit` parameter, allowing you to restrict the number of results returned. But note that `readAll()` and `?limit=1` will _not_ do what you might think.
+
+`limit` means something like "number of results per request." If you have 500 apps, `readAll('apps?limit=1')` will dutifully crawl all 500 apps in 500 requests, one at a time. 😳
+
+If you want to limit the total number of results, use `read('apps?limit=1')` instead of `readAll()`.
+
+On the other hand, if you _do_ have 500 apps, well, the default `limit` is usually 50, so `readAll('apps')` will perform ten requests, one at a time. You can greatly improve the performance of `readAll()` by passing in the maximum limit, like this:
+
+```js
+const { data: apps } = readAll('apps?limit=200');
+```
+
+Instead of performing ten requests for 500 apps, 50 apps at a time, this will make `readAll()` make just three requests for 500 apps, 200 at a time.
+
+When debugging performance, you might want to pass in an options object, `{ logRequests: true }`. That will show you all the requests we're making.
+
+```js
+const { data: apps } = readAll('apps?limit=200', { logRequests: true });
+```
+
+## Data and Inclusions
+
+The App Store Connect API endpoint returns all data in a `data` key, like this:
+
+```js
+{
+  data: [ /* actual data here */ ]
+}
+```
+
+But there can be information outside the `data` key that you might want/need. If you choose to use an `include` query parameter, like `apps?include=appStoreVersions`, then the App Store Connect API will return that data as a separate `included` key, outside the `data` response:
+
+```js
+{
+  data: [
+    {
+      type: "apps",
+      id: 123,
+      attributes: { /* ... */ },
+      relationships: {
+        appStoreVersions: { data: [
+          { type: "appStoreVersions", id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" }
+        ]}
+      }
+    }
+  ],
+  included: [
+    {
+      type: "appStoreVersions",
+      id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      attributes: { /* ... */ },
+      relationships: { /* ... */ }
+    }
+  ]
+}
+```
+
+**This library will transform the 'included' data by default.**
+
+Apple's default behavior is to return all `included` data in a flat array of objects. Even if you `include` multiple types of data, like this: `readAll('apps?include=builds,appStoreVersions')`, all of them will be shuffled together into one giant array.
+
+In our experience, having inclusions be one giant array is not ideal, so we decided to transform the `included` data automagically.
+
+Both `read()` and `readAll()` will return the inclusions as a nested JSON object, where the top-level keys are type names (like `builds` and `appStoreVersions`), mapping to another JSON object, mapping IDs to objects.
+
+The result of `readAll('apps?include=builds,appStoreVersions')` would look like this:
+
+```js
+{
+  data: [ /* ... */ ],
+  included: {
+    builds: {
+      "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx": {
+        type: "builds",
+        id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+        attributes: { /* ... */ },
+        relationships: { /* ... */ }
+      }
+    },
+    appStoreVersions: {
+      "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy": {
+        type: "appStoreVersions",
+        id: "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
+        attributes: { /* ... */ },
+        relationships: { /* ... */ }
+      }
+    }
+  }
+}
+```
+
+Handling inclusions as a tree makes it easier to map from `relationships` to the `included` objects.
+
+```js
+const {data: apps, included: { builds, appStoreVersions } =
+  await readAll('apps?include=builds,appStoreVersions');
+for (const app of apps) {
+  const versionStrings = app.relationships.appStoreVersions.data
+    .map(rel => appStoreVersions[rel.id])
+    .map(appStoreVersion => appStoreVersion.attributes.versionString);
+  const buildVersions = app.relationships.builds.data
+    .map(rel => builds[rel.id])
+    .map(build => build.attributes.version);
+  console.log({name: app.attributes.name, versionStrings, buildVersions});
+}
 ```
 
 ## Creating, updating, and removing a new App Store version
@@ -47,10 +180,10 @@ console.log(inAppPurchase);
 We create objects with the `create` function. It constructs a create request (a `POST`). It uses the "type" as the URL, and it allows you to pass in a data object as a relationship.
 
 ```js
-const { fetchJson, create, update, remove } = await api({issuerId, apiKey, privateKey});
+const { read, create, update, remove } = await api({issuerId, apiKey, privateKey});
 
 // let's use the first app ID, for example
-const [app] = await fetchJson('apps');
+const { data: [app] } = await read('apps?limit=1');
 
 const appStoreVersion = await create({
   type: 'appStoreVersions',
@@ -125,17 +258,17 @@ But the "App Screenshot" object is just a "reservation" object, allowing you to 
 import { stat, readFile } from 'fs/promises';
 import { api } from `node-app-store-connect-api`;
 
-const { fetchJson, create, uploadAsset, pollForUploadSuccess } = 
+const { read, create, uploadAsset, pollForUploadSuccess } = 
   await api({issuerId, apiKey, privateKey});
 
 // in real life, you might have to create your
 // own app, version, localization, and screenshot set
-const [app] = await fetchJson('apps');
-const [version] = await fetchJson(
+const { data: [app] } = await read('apps?limit=1');
+const { data: [version] } = await read(
   app.relationships.appStoreVersions.links.related);
-const [l10n] = await fetchJson(
+const { data: [l10n] } = await read(
   version.relationships.appStoreVersionLocalizations.links.related);
-const [appScreenshotSet] = await (fetchJson(
+const { data: [appScreenshotSet] } = await (read(
   l10n.relationships.appScreenshots.links.related);
 
 const filePath = '/path/to/myScreenshot.png';
@@ -159,121 +292,6 @@ await pollForUploadSuccess(appScreenshot.links.self);
 
 **That's a lot of work.** Check out the working samples in the [`samples`](https://github.com/dfabulich/node-app-store-connect-api/tree/main/samples) directory of this repository.
 
-## Pagination
-
-The App Store Connect API can return data in multiple pages. You're meant to request each page one at a time, using the data from the `links` section.
-
-This API automatically crawls all pages in a response by default. If you'd like that not to happen, you can pass an object containing options to `fetchJson` like this:
-
-```js
-const apps = await fetchJson('apps', { crawlAllPages: false });
-```
-
-But, instead, consider using a `limit` parameter to limit the number of results:
-
-```js
-const apps = await fetchJson('apps?limit=1');
-```
-
-## Data and Inclusions
-
-By default, the App Store Connect API endpoint returns all data in a `data` key, like this:
-
-```js
-{
-  data: [ /* actual data here */ ]
-}
-```
-
-As a convenience, by default, this library automagically returns the `data` array directly, not wrapped in a `{data}` object. Otherwise, you'd have to do this, which can be annoying:
-
-```js
-const apps = (await fetchJson('apps')).data;
-// or this:
-const {data: apps} = await fetchJson('apps');
-```
-
-But there is information outside the `data` key that you might want/need. If you choose to use an `include` query parameter, like `apps?include=appStoreVersions`, then the App Store Connect API will return that data as a separate `included` key, outside the `data` response:
-
-```js
-{
-  data: [
-    {
-      type: "apps",
-      id: 123,
-      attributes: { /* ... */ },
-      relationships: {
-        appStoreVersions: { data: [
-          { type: "appStoreVersions", id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" }
-        ]}
-      }
-    }
-  ],
-  included: [
-    {
-      type: "appStoreVersions",
-      id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-      attributes: { /* ... */ },
-      relationships: { /* ... */ }
-    }
-  ]
-}
-```
-
-**This library will skip/ignore the `included` data by default.**
-
-You can pass an `inclusions` option to `fetchJson` to make it include the `data` key and the `included` key.
-
-```js
-const {data: apps, included: appStoreVersions} =
-  await fetchJson('apps?include=appStoreVersions', {inclusions: true});
-```
-
-In our experience, having inclusions be an array is not ideal, especially if you include multiple kinds of objects, like this: `fetchJson('apps?include=builds,appStoreVersions')`
-
-So, we've also provided an `{inclusions: 'tree'}` option. If you use that, we'll provide the inclusions as a nested JSON object, where the top-level keys are type names (like `builds` and `appStoreVersions`), mapping to another JSON object, mapping IDs to objects.
-
-The result of `fetchJson('apps?include=builds,appStoreVersions', {inclusions: 'tree'})` would look like this:
-
-```js
-{
-  data: [ /* ... */ ],
-  included: {
-    builds: {
-      "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx": {
-        type: "builds",
-        id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-        attributes: { /* ... */ },
-        relationships: { /* ... */ }
-      }
-    },
-    appStoreVersions: {
-      "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx": {
-        type: "appStoreVersions",
-        id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-        attributes: { /* ... */ },
-        relationships: { /* ... */ }
-      }
-    }
-  }
-}
-```
-
-Handling inclusions as a tree makes it easier to map from `relationships` to the `included` objects.
-
-```js
-const {data: apps, included} =
-  await fetchJson('apps?include=builds,appStoreVersions', {inclusions: 'tree'});
-for (const app of apps) {
-  const versionStrings = app.relationships.appStoreVersions.data
-    .map(rel => included.appStoreVersions[rel.id])
-    .map(appStoreVersion => appStoreVersion.attributes.versionString);
-  const buildVersions = app.relationships.builds.data
-    .map(rel => included.builds[rel.id])
-    .map(build => build.attributes.version);
-  console.log({name: app.attributes.name, versionStrings, buildVersions});
-}
-```
 
 ## Working with In-App Purchases
 
@@ -282,60 +300,57 @@ In-app purchases are _really_ tough to work with. They sometimes (but not always
 Query for all IAPs for your app like this:
 
 ```js
-const inAppPurchases = await fetchJson(`apps/${app.id}/inAppPurchasesV2`);
+const { data: inAppPurchases } = await readAll(`apps/${app.id}/inAppPurchasesV2`);
 ```
 
 ### IAP Price Information
 
 Getting all prices is a pain in the butt. `inAppPurchases` objects are related to `iapPriceSchedule` objects, but those are nothing but `relationships` links to `manualPrices`.
 
-And each "manual price" `inAppPurchasePrices` has its own territory (there are 175 territories), so if you query for all prices for an IAP, you're going to get 175 price objects. Worse, the territory and the "price point" of `inAppPurchasePrices` objects is _hidden_ unless you explicitly `include` them with inclusions. So, to explore all manual prices for a given IAP, you'll do it like this:
+And each "manual price" `inAppPurchasePrices` object has its own territory (there are 175 territories), so if you query for all prices for an IAP, you're going to get at least 175 price objects. Worse, the territory and the "price point" of `inAppPurchasePrices` objects is _hidden_ unless you explicitly `include` them with inclusions. So, to explore all manual prices for a given IAP, you'll do it like this:
 
 ```js
-const [inAppPurchase] = await fetchJson(`apps/${app.id}/inAppPurchasesV2`);
-const { data: inAppPurchasePrices, included } = await fetchJson(`inAppPurchasePriceSchedules/${inAppPurchase.id}/manualPrices?include=inAppPurchasePricePoint,territory`)
+const { data: [inAppPurchase] } = await read(`apps/${app.id}/inAppPurchasesV2`);
+const { data: inAppPurchasePrices, included: { inAppPurchasePricePoint, territory } } = await readAll(`inAppPurchasePriceSchedules/${inAppPurchase.id}/manualPrices?include=inAppPurchasePricePoint,territory`)
 ```
 
 But it's very unlikely that you actually want to explore all manual prices for a given IAP; you probably just want price tiers. The easiest way to do that is to filter to a single territory (e.g. `USA`).
 
 ```js
-const [inAppPurchase] = await fetchJson(`apps/${app.id}/inAppPurchasesV2`);
-const { data: inAppPurchasePrices, included } = await fetchJson(`inAppPurchasePriceSchedules/${inAppPurchase.id}/manualPrices?include=inAppPurchasePricePoint&filter[territory]=USA`,
-  { inclusions: 'tree' });
+const { data: [inAppPurchase] } = await read(`apps/${app.id}/inAppPurchasesV2`);
+const { data: inAppPurchasePrices, included: { inAppPurchasePricePoint } } =
+  await readAll(`inAppPurchasePriceSchedules/${inAppPurchase.id}/manualPrices?include=inAppPurchasePricePoint&filter[territory]=USA`);
 ```
 
 That's supposed to return one price object per entry on the price schedule. Usually (but not always!) there's an additional one with `startDate: null`. According to Apple, that's supposed to be the current live price, but in my experience, it's often missing, and, in many cases, the price object with `startDate: null` often isn't the actual current live price. But, worst of all, sometimes it _only_ returns a price object with `startDate: null`, so you _must_ use it in that case.
 
-So, if you want tho current latest price for an IAP, you'd do it like this:
+So, if you want the current latest price for an IAP, you'd do it like this:
 
 ```js
 async function readPriceForIosIap(iap) {
-  const { data: inAppPurchasePrices, included } = await fetchJson(
-    `inAppPurchasePriceSchedules/${iap.id}/manualPrices?include=inAppPurchasePricePoint&filter[territory]=USA`,
-    { inclusions: 'tree' }
-  );
-	
-  let currentPriceObject = inAppPurchasePrices.filter(
-    price => price.attributes.startDate
-    && new Date(price.attributes.startDate).getTime() < Date.now()
-  ).sort((a, b) => b.attributes.startDate.localeCompare(a.attributes.startDate))[0];
-	
-  if (!currentPriceObject) {
-		if (inAppPurchasePrices.length === 1) {
-			currentPriceObject = inAppPurchasePrices[0];
-		} else {
-			throw new Error(`Couldn't find a valid price for IAP ${iap.id} ${iap.attributes.productId} ${JSON.stringify(inAppPurchasePrices, null, 2)}`);
-		}
-	}
+    const { data: inAppPurchasePrices, included: { inAppPurchasePricePoints} } = await readAll(
+        `inAppPurchasePriceSchedules/${iap.id}/manualPrices?include=inAppPurchasePricePoint&filter[territory]=USA`);
 
-  const currentPricePoint = included.inAppPurchasePricePoints[
-    currentPriceObject.relationships.inAppPurchasePricePoint.data.id
-  ];
+    let [currentPriceObject] = inAppPurchasePrices.filter(
+        price => price.attributes.startDate
+            && new Date(price.attributes.startDate).getTime() < Date.now()
+    ).sort((a, b) => b.attributes.startDate.localeCompare(a.attributes.startDate));
 
-  return currentPricePoint;
+    if (!currentPriceObject) {
+        [currentPriceObject] = inAppPurchasePrices.filter(price => price.attributes.startDate === null);
+        if (!currentPriceObject) {
+            throw new Error(`Couldn't find a valid price for IAP ${iap.id} ${iap.attributes.productId} ${JSON.stringify(inAppPurchasePrices, null, 2)}`);
+        }
+    }
+
+    const currentPricePoint = inAppPurchasePricePoints[
+        currentPriceObject.relationships.inAppPurchasePricePoint.data.id
+    ];
+
+    return currentPricePoint;
 }
 
-const { priceTier, customerPrice } = (await readPriceForIosIap(inAppPurchase)).attributes;
+const { attributes: { priceTier, customerPrice } } = await readPriceForIosIap(iap);
 ```
 
 ### Creating an IAP
@@ -352,9 +367,7 @@ const inAppPurchase = await create({
 ```
 ## Raw Requests and Responses
 
-App Store Connect API responses also include a `links` section and a `meta` section used mostly for pagination, if you're interested in those. (You typically don't need them, because our API will paginate for you.)
-
-If you want access to the data exactly as App Store Connect provided it, circumventing all of our "helpful" conveniences, the API provides a raw `fetch` function. The `fetch` function follows the rules of the standard `fetch` API, but we automatically add the `Authorization` header, and prepend `https://api.appstoreconnect.apple.com/v1` on relative URLs.
+If you want access to the data exactly as App Store Connect provided it, circumventing all of our "helpful" conveniences, (like transforming the `included` results,) the API provides a raw `fetch` function. The `fetch` function follows the rules of the standard `fetch` API, but we automatically add the `Authorization` header, and prepend `https://api.appstoreconnect.apple.com/v1` on relative URLs.
 
 ```js
 import { api } from `node-app-store-connect-api`;
@@ -362,18 +375,17 @@ import { api } from `node-app-store-connect-api`;
 const { fetch } = await api({issuerId, apiKey, privateKey});
 
 // read the raw JSON from a fetch request
-const { data: apps, included: appStoreVersions, links, meta } =
-  await fetch('apps?include=appStoreVersions').then(r=>r.json());
+const { data: [app], included: appStoreVersions, links, meta } =
+  await fetch('apps?include=appStoreVersions&limit=1').then(r=>r.json());
 
 // create an appStoreVersion the long way
-const appId = apps[0].id;
 const { appStoreVersion } = await fetch('appStoreVersions', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ data: {
     type: 'appStoreVersions',
     attributes: { platform: 'IOS', versionString: '1.0.1' },
-    relationships: { app: { data: { type: "apps", id: appId } } }
+    relationships: { app: { data: { type: "apps", id: app.id } } }
   }})
 }).then(r=>r.json());
 ```

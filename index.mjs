@@ -79,6 +79,16 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
         return response;
     }
 
+    async function read(url, options) {
+        const { data, included, meta, links } = await fetchJson(url, { crawlAllPages: false, inclusions: 'tree', ...options});
+        return { data, included, meta, links };
+    }
+
+    async function readAll(url, options) {
+        const { data, included } = await fetchJson(url, { crawlAllPages: true, inclusions: 'tree', ...options });
+        return { data, included };
+    }
+
     async function fetchJson(url, options) {
         const inclusions = options?.inclusions;
         if (inclusions && inclusions !== true && inclusions !== 'tree') {
@@ -109,7 +119,11 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
                         if (!included[data.type]) included[data.type] = {};
                         included[data.type][data.id] = data;
                     }
-                    return { data: result.data, included };
+                    if (crawlAllPages) {
+                        return { data: result.data, included };
+                    } else {
+                        return { data: result.data, included, meta: result.meta, links: result.links };
+                    }
                 } else if (inclusions) {
                     return { data: result.data, included: result.included };
                 } else {
@@ -237,6 +251,6 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
         }
     }
 
-    return { fetch: authFetch, fetchJson, postJson, create, update, remove, uploadAsset, pollForUploadSuccess };
+    return { read, readAll, fetch: authFetch, fetchJson, postJson, create, update, remove, uploadAsset, pollForUploadSuccess };
 }
 
