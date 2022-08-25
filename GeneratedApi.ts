@@ -6180,8 +6180,6 @@ export enum SubscriptionOfferMode {
 }
 
 export enum SubscriptionStatusUrlVersion {
-  V1 = "V1",
-  V2 = "V2",
   V1 = "v1",
   V2 = "v2",
 }
