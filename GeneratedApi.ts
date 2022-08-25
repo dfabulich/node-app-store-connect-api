@@ -9,6 +9,8 @@
  * ---------------------------------------------------------------
  */
 
+import fetch, {Response} from 'node-fetch';
+
 export interface AgeRatingDeclaration {
   type: "ageRatingDeclarations";
   id: string;
