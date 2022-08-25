@@ -4,6 +4,7 @@
   "description": "Node library to interface with the App Store Connect API",
   "main": "index.mjs",
   "scripts": {
+    "generate": "npx swagger-typescript-api --path ./app_store_connect_api_2.0_openapi.json --output . --name GeneratedApi.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Dan Fabulich <dan@fabulich.com>",
@@ -13,9 +14,19 @@
     "md5": "^2.3.0",
     "node-fetch": "^3.0.0"
   },
-  "keywords": ["apple", "app store", "appstore"],
+  "keywords": [
+    "apple",
+    "app store",
+    "appstore"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/dfabulich/node-app-store-connect-api"
-  }
+  },
+  "devDependencies": {
+    "@types/node-fetch": "^2.6.2",
+    "swagger-typescript-api": "^10.0.1",
+    "typescript": "^4.7.4"
+  },
+  "type": "module"
 }
