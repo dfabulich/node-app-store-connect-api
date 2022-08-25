@@ -6649,7 +6649,7 @@ export class HttpClient<SecurityDataType = unknown> {
     }
   };
 
-  public request = async <T = any, E = any>({
+  public request = async <T = any>({
     body,
     secure,
     path,
@@ -6659,7 +6659,7 @@ export class HttpClient<SecurityDataType = unknown> {
     baseUrl,
     cancelToken,
     ...params
-  }: FullRequestParams): Promise<HttpResponse<T, E>> => {
+  }: FullRequestParams): Promise<T> => {
     const secureParams =
       ((typeof secure === "boolean" ? secure : this.baseApiParams.secure) &&
         this.securityWorker &&
@@ -6679,32 +6679,13 @@ export class HttpClient<SecurityDataType = unknown> {
       signal: cancelToken ? this.createAbortSignal(cancelToken) : requestParams.signal,
       body: typeof body === "undefined" || body === null ? null : payloadFormatter(body),
     }).then(async (response) => {
-      const r = response as HttpResponse<T, E>;
-      r.data = null as unknown as T;
-      r.error = null as unknown as E;
+      if (!response.ok) throw await response.text();
 
-      const data = !responseFormat
-        ? r
-        : await response[responseFormat]()
-            .then((data) => {
-              if (r.ok) {
-                r.data = data;
-              } else {
-                r.error = data;
-              }
-              return r;
-            })
-            .catch((e) => {
-              r.error = e;
-              return r;
-            });
-
+      const data = await response.json();
       if (cancelToken) {
         this.abortControllers.delete(cancelToken);
       }
-
-      if (!response.ok) throw data;
-      return data;
+      return data as T;
     });
   };
 }
@@ -6729,7 +6710,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AgeRatingDeclarationUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AgeRatingDeclarationResponse, ErrorResponse>({
+      this.request<AgeRatingDeclarationResponse>({
         path: `/v1/ageRatingDeclarations/${id}`,
         method: "PATCH",
         body: data,
@@ -6758,7 +6739,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppCategoriesResponse, ErrorResponse>({
+      this.request<AppCategoriesResponse>({
         path: `/v1/appCategories`,
         method: "GET",
         query: query,
@@ -6784,7 +6765,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppCategoryResponse, ErrorResponse>({
+      this.request<AppCategoryResponse>({
         path: `/v1/appCategories/${id}`,
         method: "GET",
         query: query,
@@ -6805,7 +6786,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppClipAdvancedExperienceImageCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppClipAdvancedExperienceImageResponse, ErrorResponse>({
+      this.request<AppClipAdvancedExperienceImageResponse>({
         path: `/v1/appClipAdvancedExperienceImages`,
         method: "POST",
         body: data,
@@ -6838,7 +6819,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppClipAdvancedExperienceImageResponse, ErrorResponse>({
+      this.request<AppClipAdvancedExperienceImageResponse>({
         path: `/v1/appClipAdvancedExperienceImages/${id}`,
         method: "GET",
         query: query,
@@ -6860,7 +6841,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppClipAdvancedExperienceImageUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppClipAdvancedExperienceImageResponse, ErrorResponse>({
+      this.request<AppClipAdvancedExperienceImageResponse>({
         path: `/v1/appClipAdvancedExperienceImages/${id}`,
         method: "PATCH",
         body: data,
@@ -6882,7 +6863,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppClipAdvancedExperienceCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppClipAdvancedExperienceResponse, ErrorResponse>({
+      this.request<AppClipAdvancedExperienceResponse>({
         path: `/v1/appClipAdvancedExperiences`,
         method: "POST",
         body: data,
@@ -6923,7 +6904,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppClipAdvancedExperienceResponse, ErrorResponse>({
+      this.request<AppClipAdvancedExperienceResponse>({
         path: `/v1/appClipAdvancedExperiences/${id}`,
         method: "GET",
         query: query,
@@ -6945,7 +6926,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppClipAdvancedExperienceUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppClipAdvancedExperienceResponse, ErrorResponse>({
+      this.request<AppClipAdvancedExperienceResponse>({
         path: `/v1/appClipAdvancedExperiences/${id}`,
         method: "PATCH",
         body: data,
@@ -6967,7 +6948,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppClipAppStoreReviewDetailCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppClipAppStoreReviewDetailResponse, ErrorResponse>({
+      this.request<AppClipAppStoreReviewDetailResponse>({
         path: `/v1/appClipAppStoreReviewDetails`,
         method: "POST",
         body: data,
@@ -6993,7 +6974,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppClipAppStoreReviewDetailResponse, ErrorResponse>({
+      this.request<AppClipAppStoreReviewDetailResponse>({
         path: `/v1/appClipAppStoreReviewDetails/${id}`,
         method: "GET",
         query: query,
@@ -7015,7 +6996,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppClipAppStoreReviewDetailUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppClipAppStoreReviewDetailResponse, ErrorResponse>({
+      this.request<AppClipAppStoreReviewDetailResponse>({
         path: `/v1/appClipAppStoreReviewDetails/${id}`,
         method: "PATCH",
         body: data,
@@ -7037,7 +7018,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppClipDefaultExperienceLocalizationCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppClipDefaultExperienceLocalizationResponse, ErrorResponse>({
+      this.request<AppClipDefaultExperienceLocalizationResponse>({
         path: `/v1/appClipDefaultExperienceLocalizations`,
         method: "POST",
         body: data,
@@ -7078,7 +7059,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppClipDefaultExperienceLocalizationResponse, ErrorResponse>({
+      this.request<AppClipDefaultExperienceLocalizationResponse>({
         path: `/v1/appClipDefaultExperienceLocalizations/${id}`,
         method: "GET",
         query: query,
@@ -7100,7 +7081,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppClipDefaultExperienceLocalizationUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppClipDefaultExperienceLocalizationResponse, ErrorResponse>({
+      this.request<AppClipDefaultExperienceLocalizationResponse>({
         path: `/v1/appClipDefaultExperienceLocalizations/${id}`,
         method: "PATCH",
         body: data,
@@ -7119,7 +7100,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appClipDefaultExperienceLocalizationsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appClipDefaultExperienceLocalizations/${id}`,
         method: "DELETE",
         secure: true,
@@ -7138,7 +7119,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppClipDefaultExperienceCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppClipDefaultExperienceResponse, ErrorResponse>({
+      this.request<AppClipDefaultExperienceResponse>({
         path: `/v1/appClipDefaultExperiences`,
         method: "POST",
         body: data,
@@ -7205,7 +7186,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppClipDefaultExperienceResponse, ErrorResponse>({
+      this.request<AppClipDefaultExperienceResponse>({
         path: `/v1/appClipDefaultExperiences/${id}`,
         method: "GET",
         query: query,
@@ -7227,7 +7208,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppClipDefaultExperienceUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppClipDefaultExperienceResponse, ErrorResponse>({
+      this.request<AppClipDefaultExperienceResponse>({
         path: `/v1/appClipDefaultExperiences/${id}`,
         method: "PATCH",
         body: data,
@@ -7246,7 +7227,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appClipDefaultExperiencesDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appClipDefaultExperiences/${id}`,
         method: "DELETE",
         secure: true,
@@ -7262,7 +7243,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appClipHeaderImagesCreateInstance: (data: AppClipHeaderImageCreateRequest, params: RequestParams = {}) =>
-      this.request<AppClipHeaderImageResponse, ErrorResponse>({
+      this.request<AppClipHeaderImageResponse>({
         path: `/v1/appClipHeaderImages`,
         method: "POST",
         body: data,
@@ -7297,7 +7278,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppClipHeaderImageResponse, ErrorResponse>({
+      this.request<AppClipHeaderImageResponse>({
         path: `/v1/appClipHeaderImages/${id}`,
         method: "GET",
         query: query,
@@ -7319,7 +7300,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppClipHeaderImageUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppClipHeaderImageResponse, ErrorResponse>({
+      this.request<AppClipHeaderImageResponse>({
         path: `/v1/appClipHeaderImages/${id}`,
         method: "PATCH",
         body: data,
@@ -7338,7 +7319,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appClipHeaderImagesDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appClipHeaderImages/${id}`,
         method: "DELETE",
         secure: true,
@@ -7385,7 +7366,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppClipResponse, ErrorResponse>({
+      this.request<AppClipResponse>({
         path: `/v1/appClips/${id}`,
         method: "GET",
         query: query,
@@ -7406,7 +7387,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppCustomProductPageLocalizationCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppCustomProductPageLocalizationResponse, ErrorResponse>({
+      this.request<AppCustomProductPageLocalizationResponse>({
         path: `/v1/appCustomProductPageLocalizations`,
         method: "POST",
         body: data,
@@ -7454,7 +7435,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppCustomProductPageLocalizationResponse, ErrorResponse>({
+      this.request<AppCustomProductPageLocalizationResponse>({
         path: `/v1/appCustomProductPageLocalizations/${id}`,
         method: "GET",
         query: query,
@@ -7476,7 +7457,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppCustomProductPageLocalizationUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppCustomProductPageLocalizationResponse, ErrorResponse>({
+      this.request<AppCustomProductPageLocalizationResponse>({
         path: `/v1/appCustomProductPageLocalizations/${id}`,
         method: "PATCH",
         body: data,
@@ -7495,7 +7476,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appCustomProductPageLocalizationsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appCustomProductPageLocalizations/${id}`,
         method: "DELETE",
         secure: true,
@@ -7514,7 +7495,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppCustomProductPageVersionCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppCustomProductPageVersionResponse, ErrorResponse>({
+      this.request<AppCustomProductPageVersionResponse>({
         path: `/v1/appCustomProductPageVersions`,
         method: "POST",
         body: data,
@@ -7553,7 +7534,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppCustomProductPageVersionResponse, ErrorResponse>({
+      this.request<AppCustomProductPageVersionResponse>({
         path: `/v1/appCustomProductPageVersions/${id}`,
         method: "GET",
         query: query,
@@ -7571,7 +7552,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appCustomProductPagesCreateInstance: (data: AppCustomProductPageCreateRequest, params: RequestParams = {}) =>
-      this.request<AppCustomProductPageResponse, ErrorResponse>({
+      this.request<AppCustomProductPageResponse>({
         path: `/v1/appCustomProductPages`,
         method: "POST",
         body: data,
@@ -7612,7 +7593,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppCustomProductPageResponse, ErrorResponse>({
+      this.request<AppCustomProductPageResponse>({
         path: `/v1/appCustomProductPages/${id}`,
         method: "GET",
         query: query,
@@ -7634,7 +7615,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppCustomProductPageUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppCustomProductPageResponse, ErrorResponse>({
+      this.request<AppCustomProductPageResponse>({
         path: `/v1/appCustomProductPages/${id}`,
         method: "PATCH",
         body: data,
@@ -7653,7 +7634,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appCustomProductPagesDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appCustomProductPages/${id}`,
         method: "DELETE",
         secure: true,
@@ -7734,7 +7715,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppEncryptionDeclarationsResponse, ErrorResponse>({
+      this.request<AppEncryptionDeclarationsResponse>({
         path: `/v1/appEncryptionDeclarations`,
         method: "GET",
         query: query,
@@ -7814,7 +7795,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppEncryptionDeclarationResponse, ErrorResponse>({
+      this.request<AppEncryptionDeclarationResponse>({
         path: `/v1/appEncryptionDeclarations/${id}`,
         method: "GET",
         query: query,
@@ -7832,7 +7813,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appEventLocalizationsCreateInstance: (data: AppEventLocalizationCreateRequest, params: RequestParams = {}) =>
-      this.request<AppEventLocalizationResponse, ErrorResponse>({
+      this.request<AppEventLocalizationResponse>({
         path: `/v1/appEventLocalizations`,
         method: "POST",
         body: data,
@@ -7891,7 +7872,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppEventLocalizationResponse, ErrorResponse>({
+      this.request<AppEventLocalizationResponse>({
         path: `/v1/appEventLocalizations/${id}`,
         method: "GET",
         query: query,
@@ -7913,7 +7894,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppEventLocalizationUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppEventLocalizationResponse, ErrorResponse>({
+      this.request<AppEventLocalizationResponse>({
         path: `/v1/appEventLocalizations/${id}`,
         method: "PATCH",
         body: data,
@@ -7932,7 +7913,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appEventLocalizationsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appEventLocalizations/${id}`,
         method: "DELETE",
         secure: true,
@@ -7948,7 +7929,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appEventScreenshotsCreateInstance: (data: AppEventScreenshotCreateRequest, params: RequestParams = {}) =>
-      this.request<AppEventScreenshotResponse, ErrorResponse>({
+      this.request<AppEventScreenshotResponse>({
         path: `/v1/appEventScreenshots`,
         method: "POST",
         body: data,
@@ -7984,7 +7965,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppEventScreenshotResponse, ErrorResponse>({
+      this.request<AppEventScreenshotResponse>({
         path: `/v1/appEventScreenshots/${id}`,
         method: "GET",
         query: query,
@@ -8006,7 +7987,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppEventScreenshotUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppEventScreenshotResponse, ErrorResponse>({
+      this.request<AppEventScreenshotResponse>({
         path: `/v1/appEventScreenshots/${id}`,
         method: "PATCH",
         body: data,
@@ -8025,7 +8006,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appEventScreenshotsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appEventScreenshots/${id}`,
         method: "DELETE",
         secure: true,
@@ -8041,7 +8022,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appEventVideoClipsCreateInstance: (data: AppEventVideoClipCreateRequest, params: RequestParams = {}) =>
-      this.request<AppEventVideoClipResponse, ErrorResponse>({
+      this.request<AppEventVideoClipResponse>({
         path: `/v1/appEventVideoClips`,
         method: "POST",
         body: data,
@@ -8078,7 +8059,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppEventVideoClipResponse, ErrorResponse>({
+      this.request<AppEventVideoClipResponse>({
         path: `/v1/appEventVideoClips/${id}`,
         method: "GET",
         query: query,
@@ -8096,7 +8077,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appEventVideoClipsUpdateInstance: (id: string, data: AppEventVideoClipUpdateRequest, params: RequestParams = {}) =>
-      this.request<AppEventVideoClipResponse, ErrorResponse>({
+      this.request<AppEventVideoClipResponse>({
         path: `/v1/appEventVideoClips/${id}`,
         method: "PATCH",
         body: data,
@@ -8115,7 +8096,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appEventVideoClipsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appEventVideoClips/${id}`,
         method: "DELETE",
         secure: true,
@@ -8131,7 +8112,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appEventsCreateInstance: (data: AppEventCreateRequest, params: RequestParams = {}) =>
-      this.request<AppEventResponse, ErrorResponse>({
+      this.request<AppEventResponse>({
         path: `/v1/appEvents`,
         method: "POST",
         body: data,
@@ -8180,7 +8161,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppEventResponse, ErrorResponse>({
+      this.request<AppEventResponse>({
         path: `/v1/appEvents/${id}`,
         method: "GET",
         query: query,
@@ -8198,7 +8179,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appEventsUpdateInstance: (id: string, data: AppEventUpdateRequest, params: RequestParams = {}) =>
-      this.request<AppEventResponse, ErrorResponse>({
+      this.request<AppEventResponse>({
         path: `/v1/appEvents/${id}`,
         method: "PATCH",
         body: data,
@@ -8217,7 +8198,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appEventsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appEvents/${id}`,
         method: "DELETE",
         secure: true,
@@ -8233,7 +8214,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appInfoLocalizationsCreateInstance: (data: AppInfoLocalizationCreateRequest, params: RequestParams = {}) =>
-      this.request<AppInfoLocalizationResponse, ErrorResponse>({
+      this.request<AppInfoLocalizationResponse>({
         path: `/v1/appInfoLocalizations`,
         method: "POST",
         body: data,
@@ -8267,7 +8248,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppInfoLocalizationResponse, ErrorResponse>({
+      this.request<AppInfoLocalizationResponse>({
         path: `/v1/appInfoLocalizations/${id}`,
         method: "GET",
         query: query,
@@ -8289,7 +8270,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppInfoLocalizationUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppInfoLocalizationResponse, ErrorResponse>({
+      this.request<AppInfoLocalizationResponse>({
         path: `/v1/appInfoLocalizations/${id}`,
         method: "PATCH",
         body: data,
@@ -8308,7 +8289,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appInfoLocalizationsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appInfoLocalizations/${id}`,
         method: "DELETE",
         secure: true,
@@ -8385,7 +8366,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppInfoResponse, ErrorResponse>({
+      this.request<AppInfoResponse>({
         path: `/v1/appInfos/${id}`,
         method: "GET",
         query: query,
@@ -8403,7 +8384,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appInfosUpdateInstance: (id: string, data: AppInfoUpdateRequest, params: RequestParams = {}) =>
-      this.request<AppInfoResponse, ErrorResponse>({
+      this.request<AppInfoResponse>({
         path: `/v1/appInfos/${id}`,
         method: "PATCH",
         body: data,
@@ -8422,7 +8403,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appPreOrdersCreateInstance: (data: AppPreOrderCreateRequest, params: RequestParams = {}) =>
-      this.request<AppPreOrderResponse, ErrorResponse>({
+      this.request<AppPreOrderResponse>({
         path: `/v1/appPreOrders`,
         method: "POST",
         body: data,
@@ -8445,7 +8426,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[appPreOrders]"?: ("app" | "appReleaseDate" | "preOrderAvailableDate")[]; include?: "app"[] },
       params: RequestParams = {},
     ) =>
-      this.request<AppPreOrderResponse, ErrorResponse>({
+      this.request<AppPreOrderResponse>({
         path: `/v1/appPreOrders/${id}`,
         method: "GET",
         query: query,
@@ -8463,7 +8444,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appPreOrdersUpdateInstance: (id: string, data: AppPreOrderUpdateRequest, params: RequestParams = {}) =>
-      this.request<AppPreOrderResponse, ErrorResponse>({
+      this.request<AppPreOrderResponse>({
         path: `/v1/appPreOrders/${id}`,
         method: "PATCH",
         body: data,
@@ -8482,7 +8463,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appPreOrdersDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appPreOrders/${id}`,
         method: "DELETE",
         secure: true,
@@ -8498,7 +8479,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appPreviewSetsCreateInstance: (data: AppPreviewSetCreateRequest, params: RequestParams = {}) =>
-      this.request<AppPreviewSetResponse, ErrorResponse>({
+      this.request<AppPreviewSetResponse>({
         path: `/v1/appPreviewSets`,
         method: "POST",
         body: data,
@@ -8549,7 +8530,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppPreviewSetResponse, ErrorResponse>({
+      this.request<AppPreviewSetResponse>({
         path: `/v1/appPreviewSets/${id}`,
         method: "GET",
         query: query,
@@ -8567,7 +8548,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appPreviewSetsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appPreviewSets/${id}`,
         method: "DELETE",
         secure: true,
@@ -8583,7 +8564,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appPreviewsCreateInstance: (data: AppPreviewCreateRequest, params: RequestParams = {}) =>
-      this.request<AppPreviewResponse, ErrorResponse>({
+      this.request<AppPreviewResponse>({
         path: `/v1/appPreviews`,
         method: "POST",
         body: data,
@@ -8621,7 +8602,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppPreviewResponse, ErrorResponse>({
+      this.request<AppPreviewResponse>({
         path: `/v1/appPreviews/${id}`,
         method: "GET",
         query: query,
@@ -8639,7 +8620,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appPreviewsUpdateInstance: (id: string, data: AppPreviewUpdateRequest, params: RequestParams = {}) =>
-      this.request<AppPreviewResponse, ErrorResponse>({
+      this.request<AppPreviewResponse>({
         path: `/v1/appPreviews/${id}`,
         method: "PATCH",
         body: data,
@@ -8658,7 +8639,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appPreviewsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appPreviews/${id}`,
         method: "DELETE",
         secure: true,
@@ -8685,7 +8666,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppPricePointsResponse, ErrorResponse>({
+      this.request<AppPricePointsResponse>({
         path: `/v1/appPricePoints`,
         method: "GET",
         query: query,
@@ -8712,7 +8693,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppPricePointResponse, ErrorResponse>({
+      this.request<AppPricePointResponse>({
         path: `/v1/appPricePoints/${id}`,
         method: "GET",
         query: query,
@@ -8740,7 +8721,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppPriceTiersResponse, ErrorResponse>({
+      this.request<AppPriceTiersResponse>({
         path: `/v1/appPriceTiers`,
         method: "GET",
         query: query,
@@ -8767,7 +8748,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppPriceTierResponse, ErrorResponse>({
+      this.request<AppPriceTierResponse>({
         path: `/v1/appPriceTiers/${id}`,
         method: "GET",
         query: query,
@@ -8789,7 +8770,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[appPrices]"?: ("app" | "priceTier")[]; include?: ("app" | "priceTier")[] },
       params: RequestParams = {},
     ) =>
-      this.request<AppPriceResponse, ErrorResponse>({
+      this.request<AppPriceResponse>({
         path: `/v1/appPrices/${id}`,
         method: "GET",
         query: query,
@@ -8807,7 +8788,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appScreenshotSetsCreateInstance: (data: AppScreenshotSetCreateRequest, params: RequestParams = {}) =>
-      this.request<AppScreenshotSetResponse, ErrorResponse>({
+      this.request<AppScreenshotSetResponse>({
         path: `/v1/appScreenshotSets`,
         method: "POST",
         body: data,
@@ -8857,7 +8838,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppScreenshotSetResponse, ErrorResponse>({
+      this.request<AppScreenshotSetResponse>({
         path: `/v1/appScreenshotSets/${id}`,
         method: "GET",
         query: query,
@@ -8875,7 +8856,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appScreenshotSetsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appScreenshotSets/${id}`,
         method: "DELETE",
         secure: true,
@@ -8891,7 +8872,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appScreenshotsCreateInstance: (data: AppScreenshotCreateRequest, params: RequestParams = {}) =>
-      this.request<AppScreenshotResponse, ErrorResponse>({
+      this.request<AppScreenshotResponse>({
         path: `/v1/appScreenshots`,
         method: "POST",
         body: data,
@@ -8928,7 +8909,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppScreenshotResponse, ErrorResponse>({
+      this.request<AppScreenshotResponse>({
         path: `/v1/appScreenshots/${id}`,
         method: "GET",
         query: query,
@@ -8946,7 +8927,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appScreenshotsUpdateInstance: (id: string, data: AppScreenshotUpdateRequest, params: RequestParams = {}) =>
-      this.request<AppScreenshotResponse, ErrorResponse>({
+      this.request<AppScreenshotResponse>({
         path: `/v1/appScreenshots/${id}`,
         method: "PATCH",
         body: data,
@@ -8965,7 +8946,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appScreenshotsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appScreenshots/${id}`,
         method: "DELETE",
         secure: true,
@@ -8984,7 +8965,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppStoreReviewAttachmentCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreReviewAttachmentResponse, ErrorResponse>({
+      this.request<AppStoreReviewAttachmentResponse>({
         path: `/v1/appStoreReviewAttachments`,
         method: "POST",
         body: data,
@@ -9018,7 +8999,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreReviewAttachmentResponse, ErrorResponse>({
+      this.request<AppStoreReviewAttachmentResponse>({
         path: `/v1/appStoreReviewAttachments/${id}`,
         method: "GET",
         query: query,
@@ -9040,7 +9021,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppStoreReviewAttachmentUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreReviewAttachmentResponse, ErrorResponse>({
+      this.request<AppStoreReviewAttachmentResponse>({
         path: `/v1/appStoreReviewAttachments/${id}`,
         method: "PATCH",
         body: data,
@@ -9059,7 +9040,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appStoreReviewAttachmentsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appStoreReviewAttachments/${id}`,
         method: "DELETE",
         secure: true,
@@ -9075,7 +9056,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appStoreReviewDetailsCreateInstance: (data: AppStoreReviewDetailCreateRequest, params: RequestParams = {}) =>
-      this.request<AppStoreReviewDetailResponse, ErrorResponse>({
+      this.request<AppStoreReviewDetailResponse>({
         path: `/v1/appStoreReviewDetails`,
         method: "POST",
         body: data,
@@ -9122,7 +9103,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreReviewDetailResponse, ErrorResponse>({
+      this.request<AppStoreReviewDetailResponse>({
         path: `/v1/appStoreReviewDetails/${id}`,
         method: "GET",
         query: query,
@@ -9144,7 +9125,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppStoreReviewDetailUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreReviewDetailResponse, ErrorResponse>({
+      this.request<AppStoreReviewDetailResponse>({
         path: `/v1/appStoreReviewDetails/${id}`,
         method: "PATCH",
         body: data,
@@ -9166,7 +9147,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppStoreVersionExperimentTreatmentLocalizationCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionExperimentTreatmentLocalizationResponse, ErrorResponse>({
+      this.request<AppStoreVersionExperimentTreatmentLocalizationResponse>({
         path: `/v1/appStoreVersionExperimentTreatmentLocalizations`,
         method: "POST",
         body: data,
@@ -9213,7 +9194,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionExperimentTreatmentLocalizationResponse, ErrorResponse>({
+      this.request<AppStoreVersionExperimentTreatmentLocalizationResponse>({
         path: `/v1/appStoreVersionExperimentTreatmentLocalizations/${id}`,
         method: "GET",
         query: query,
@@ -9231,7 +9212,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appStoreVersionExperimentTreatmentLocalizationsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appStoreVersionExperimentTreatmentLocalizations/${id}`,
         method: "DELETE",
         secure: true,
@@ -9250,7 +9231,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppStoreVersionExperimentTreatmentCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionExperimentTreatmentResponse, ErrorResponse>({
+      this.request<AppStoreVersionExperimentTreatmentResponse>({
         path: `/v1/appStoreVersionExperimentTreatments`,
         method: "POST",
         body: data,
@@ -9290,7 +9271,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionExperimentTreatmentResponse, ErrorResponse>({
+      this.request<AppStoreVersionExperimentTreatmentResponse>({
         path: `/v1/appStoreVersionExperimentTreatments/${id}`,
         method: "GET",
         query: query,
@@ -9312,7 +9293,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppStoreVersionExperimentTreatmentUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionExperimentTreatmentResponse, ErrorResponse>({
+      this.request<AppStoreVersionExperimentTreatmentResponse>({
         path: `/v1/appStoreVersionExperimentTreatments/${id}`,
         method: "PATCH",
         body: data,
@@ -9331,7 +9312,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appStoreVersionExperimentTreatmentsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appStoreVersionExperimentTreatments/${id}`,
         method: "DELETE",
         secure: true,
@@ -9350,7 +9331,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppStoreVersionExperimentCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionExperimentResponse, ErrorResponse>({
+      this.request<AppStoreVersionExperimentResponse>({
         path: `/v1/appStoreVersionExperiments`,
         method: "POST",
         body: data,
@@ -9395,7 +9376,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionExperimentResponse, ErrorResponse>({
+      this.request<AppStoreVersionExperimentResponse>({
         path: `/v1/appStoreVersionExperiments/${id}`,
         method: "GET",
         query: query,
@@ -9417,7 +9398,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppStoreVersionExperimentUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionExperimentResponse, ErrorResponse>({
+      this.request<AppStoreVersionExperimentResponse>({
         path: `/v1/appStoreVersionExperiments/${id}`,
         method: "PATCH",
         body: data,
@@ -9436,7 +9417,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appStoreVersionExperimentsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appStoreVersionExperiments/${id}`,
         method: "DELETE",
         secure: true,
@@ -9455,7 +9436,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppStoreVersionLocalizationCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionLocalizationResponse, ErrorResponse>({
+      this.request<AppStoreVersionLocalizationResponse>({
         path: `/v1/appStoreVersionLocalizations`,
         method: "POST",
         body: data,
@@ -9508,7 +9489,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionLocalizationResponse, ErrorResponse>({
+      this.request<AppStoreVersionLocalizationResponse>({
         path: `/v1/appStoreVersionLocalizations/${id}`,
         method: "GET",
         query: query,
@@ -9530,7 +9511,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppStoreVersionLocalizationUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionLocalizationResponse, ErrorResponse>({
+      this.request<AppStoreVersionLocalizationResponse>({
         path: `/v1/appStoreVersionLocalizations/${id}`,
         method: "PATCH",
         body: data,
@@ -9549,7 +9530,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appStoreVersionLocalizationsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appStoreVersionLocalizations/${id}`,
         method: "DELETE",
         secure: true,
@@ -9568,7 +9549,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppStoreVersionPhasedReleaseCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionPhasedReleaseResponse, ErrorResponse>({
+      this.request<AppStoreVersionPhasedReleaseResponse>({
         path: `/v1/appStoreVersionPhasedReleases`,
         method: "POST",
         body: data,
@@ -9591,7 +9572,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppStoreVersionPhasedReleaseUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionPhasedReleaseResponse, ErrorResponse>({
+      this.request<AppStoreVersionPhasedReleaseResponse>({
         path: `/v1/appStoreVersionPhasedReleases/${id}`,
         method: "PATCH",
         body: data,
@@ -9610,7 +9591,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appStoreVersionPhasedReleasesDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appStoreVersionPhasedReleases/${id}`,
         method: "DELETE",
         secure: true,
@@ -9629,7 +9610,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppStoreVersionPromotionCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionPromotionResponse, ErrorResponse>({
+      this.request<AppStoreVersionPromotionResponse>({
         path: `/v1/appStoreVersionPromotions`,
         method: "POST",
         body: data,
@@ -9651,7 +9632,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppStoreVersionReleaseRequestCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionReleaseRequestResponse, ErrorResponse>({
+      this.request<AppStoreVersionReleaseRequestResponse>({
         path: `/v1/appStoreVersionReleaseRequests`,
         method: "POST",
         body: data,
@@ -9674,7 +9655,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppStoreVersionSubmissionCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionSubmissionResponse, ErrorResponse>({
+      this.request<AppStoreVersionSubmissionResponse>({
         path: `/v1/appStoreVersionSubmissions`,
         method: "POST",
         body: data,
@@ -9694,7 +9675,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appStoreVersionSubmissionsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appStoreVersionSubmissions/${id}`,
         method: "DELETE",
         secure: true,
@@ -9710,7 +9691,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appStoreVersionsCreateInstance: (data: AppStoreVersionCreateRequest, params: RequestParams = {}) =>
-      this.request<AppStoreVersionResponse, ErrorResponse>({
+      this.request<AppStoreVersionResponse>({
         path: `/v1/appStoreVersions`,
         method: "POST",
         body: data,
@@ -9883,7 +9864,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionResponse, ErrorResponse>({
+      this.request<AppStoreVersionResponse>({
         path: `/v1/appStoreVersions/${id}`,
         method: "GET",
         query: query,
@@ -9901,7 +9882,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appStoreVersionsUpdateInstance: (id: string, data: AppStoreVersionUpdateRequest, params: RequestParams = {}) =>
-      this.request<AppStoreVersionResponse, ErrorResponse>({
+      this.request<AppStoreVersionResponse>({
         path: `/v1/appStoreVersions/${id}`,
         method: "PATCH",
         body: data,
@@ -9920,7 +9901,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appStoreVersionsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appStoreVersions/${id}`,
         method: "DELETE",
         secure: true,
@@ -10247,7 +10228,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppsResponse, ErrorResponse>({
+      this.request<AppsResponse>({
         path: `/v1/apps`,
         method: "GET",
         query: query,
@@ -10547,7 +10528,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppResponse, ErrorResponse>({
+      this.request<AppResponse>({
         path: `/v1/apps/${id}`,
         method: "GET",
         query: query,
@@ -10565,7 +10546,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appsUpdateInstance: (id: string, data: AppUpdateRequest, params: RequestParams = {}) =>
-      this.request<AppResponse, ErrorResponse>({
+      this.request<AppResponse>({
         path: `/v1/apps/${id}`,
         method: "PATCH",
         body: data,
@@ -10587,7 +10568,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: BetaAppClipInvocationLocalizationCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<BetaAppClipInvocationLocalizationResponse, ErrorResponse>({
+      this.request<BetaAppClipInvocationLocalizationResponse>({
         path: `/v1/betaAppClipInvocationLocalizations`,
         method: "POST",
         body: data,
@@ -10610,7 +10591,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: BetaAppClipInvocationLocalizationUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<BetaAppClipInvocationLocalizationResponse, ErrorResponse>({
+      this.request<BetaAppClipInvocationLocalizationResponse>({
         path: `/v1/betaAppClipInvocationLocalizations/${id}`,
         method: "PATCH",
         body: data,
@@ -10629,7 +10610,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     betaAppClipInvocationLocalizationsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/betaAppClipInvocationLocalizations/${id}`,
         method: "DELETE",
         secure: true,
@@ -10645,7 +10626,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     betaAppClipInvocationsCreateInstance: (data: BetaAppClipInvocationCreateRequest, params: RequestParams = {}) =>
-      this.request<BetaAppClipInvocationResponse, ErrorResponse>({
+      this.request<BetaAppClipInvocationResponse>({
         path: `/v1/betaAppClipInvocations`,
         method: "POST",
         body: data,
@@ -10672,7 +10653,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BetaAppClipInvocationResponse, ErrorResponse>({
+      this.request<BetaAppClipInvocationResponse>({
         path: `/v1/betaAppClipInvocations/${id}`,
         method: "GET",
         query: query,
@@ -10694,7 +10675,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: BetaAppClipInvocationUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<BetaAppClipInvocationResponse, ErrorResponse>({
+      this.request<BetaAppClipInvocationResponse>({
         path: `/v1/betaAppClipInvocations/${id}`,
         method: "PATCH",
         body: data,
@@ -10713,7 +10694,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     betaAppClipInvocationsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/betaAppClipInvocations/${id}`,
         method: "DELETE",
         secure: true,
@@ -10786,7 +10767,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BetaAppLocalizationsResponse, ErrorResponse>({
+      this.request<BetaAppLocalizationsResponse>({
         path: `/v1/betaAppLocalizations`,
         method: "GET",
         query: query,
@@ -10804,7 +10785,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     betaAppLocalizationsCreateInstance: (data: BetaAppLocalizationCreateRequest, params: RequestParams = {}) =>
-      this.request<BetaAppLocalizationResponse, ErrorResponse>({
+      this.request<BetaAppLocalizationResponse>({
         path: `/v1/betaAppLocalizations`,
         method: "POST",
         body: data,
@@ -10878,7 +10859,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BetaAppLocalizationResponse, ErrorResponse>({
+      this.request<BetaAppLocalizationResponse>({
         path: `/v1/betaAppLocalizations/${id}`,
         method: "GET",
         query: query,
@@ -10900,7 +10881,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: BetaAppLocalizationUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<BetaAppLocalizationResponse, ErrorResponse>({
+      this.request<BetaAppLocalizationResponse>({
         path: `/v1/betaAppLocalizations/${id}`,
         method: "PATCH",
         body: data,
@@ -10919,7 +10900,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     betaAppLocalizationsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/betaAppLocalizations/${id}`,
         method: "DELETE",
         secure: true,
@@ -10993,7 +10974,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BetaAppReviewDetailsResponse, ErrorResponse>({
+      this.request<BetaAppReviewDetailsResponse>({
         path: `/v1/betaAppReviewDetails`,
         method: "GET",
         query: query,
@@ -11068,7 +11049,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BetaAppReviewDetailResponse, ErrorResponse>({
+      this.request<BetaAppReviewDetailResponse>({
         path: `/v1/betaAppReviewDetails/${id}`,
         method: "GET",
         query: query,
@@ -11090,7 +11071,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: BetaAppReviewDetailUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<BetaAppReviewDetailResponse, ErrorResponse>({
+      this.request<BetaAppReviewDetailResponse>({
         path: `/v1/betaAppReviewDetails/${id}`,
         method: "PATCH",
         body: data,
@@ -11144,7 +11125,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BetaAppReviewSubmissionsResponse, ErrorResponse>({
+      this.request<BetaAppReviewSubmissionsResponse>({
         path: `/v1/betaAppReviewSubmissions`,
         method: "GET",
         query: query,
@@ -11162,7 +11143,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     betaAppReviewSubmissionsCreateInstance: (data: BetaAppReviewSubmissionCreateRequest, params: RequestParams = {}) =>
-      this.request<BetaAppReviewSubmissionResponse, ErrorResponse>({
+      this.request<BetaAppReviewSubmissionResponse>({
         path: `/v1/betaAppReviewSubmissions`,
         method: "POST",
         body: data,
@@ -11214,7 +11195,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BetaAppReviewSubmissionResponse, ErrorResponse>({
+      this.request<BetaAppReviewSubmissionResponse>({
         path: `/v1/betaAppReviewSubmissions/${id}`,
         method: "GET",
         query: query,
@@ -11267,7 +11248,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BetaBuildLocalizationsResponse, ErrorResponse>({
+      this.request<BetaBuildLocalizationsResponse>({
         path: `/v1/betaBuildLocalizations`,
         method: "GET",
         query: query,
@@ -11285,7 +11266,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     betaBuildLocalizationsCreateInstance: (data: BetaBuildLocalizationCreateRequest, params: RequestParams = {}) =>
-      this.request<BetaBuildLocalizationResponse, ErrorResponse>({
+      this.request<BetaBuildLocalizationResponse>({
         path: `/v1/betaBuildLocalizations`,
         method: "POST",
         body: data,
@@ -11337,7 +11318,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BetaBuildLocalizationResponse, ErrorResponse>({
+      this.request<BetaBuildLocalizationResponse>({
         path: `/v1/betaBuildLocalizations/${id}`,
         method: "GET",
         query: query,
@@ -11359,7 +11340,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: BetaBuildLocalizationUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<BetaBuildLocalizationResponse, ErrorResponse>({
+      this.request<BetaBuildLocalizationResponse>({
         path: `/v1/betaBuildLocalizations/${id}`,
         method: "PATCH",
         body: data,
@@ -11378,7 +11359,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     betaBuildLocalizationsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/betaBuildLocalizations/${id}`,
         method: "DELETE",
         secure: true,
@@ -11511,7 +11492,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BetaGroupsResponse, ErrorResponse>({
+      this.request<BetaGroupsResponse>({
         path: `/v1/betaGroups`,
         method: "GET",
         query: query,
@@ -11529,7 +11510,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     betaGroupsCreateInstance: (data: BetaGroupCreateRequest, params: RequestParams = {}) =>
-      this.request<BetaGroupResponse, ErrorResponse>({
+      this.request<BetaGroupResponse>({
         path: `/v1/betaGroups`,
         method: "POST",
         body: data,
@@ -11647,7 +11628,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BetaGroupResponse, ErrorResponse>({
+      this.request<BetaGroupResponse>({
         path: `/v1/betaGroups/${id}`,
         method: "GET",
         query: query,
@@ -11665,7 +11646,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     betaGroupsUpdateInstance: (id: string, data: BetaGroupUpdateRequest, params: RequestParams = {}) =>
-      this.request<BetaGroupResponse, ErrorResponse>({
+      this.request<BetaGroupResponse>({
         path: `/v1/betaGroups/${id}`,
         method: "PATCH",
         body: data,
@@ -11684,7 +11665,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     betaGroupsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/betaGroups/${id}`,
         method: "DELETE",
         secure: true,
@@ -11748,7 +11729,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BetaLicenseAgreementsResponse, ErrorResponse>({
+      this.request<BetaLicenseAgreementsResponse>({
         path: `/v1/betaLicenseAgreements`,
         method: "GET",
         query: query,
@@ -11813,7 +11794,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BetaLicenseAgreementResponse, ErrorResponse>({
+      this.request<BetaLicenseAgreementResponse>({
         path: `/v1/betaLicenseAgreements/${id}`,
         method: "GET",
         query: query,
@@ -11835,7 +11816,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: BetaLicenseAgreementUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<BetaLicenseAgreementResponse, ErrorResponse>({
+      this.request<BetaLicenseAgreementResponse>({
         path: `/v1/betaLicenseAgreements/${id}`,
         method: "PATCH",
         body: data,
@@ -11854,7 +11835,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     betaTesterInvitationsCreateInstance: (data: BetaTesterInvitationCreateRequest, params: RequestParams = {}) =>
-      this.request<BetaTesterInvitationResponse, ErrorResponse>({
+      this.request<BetaTesterInvitationResponse>({
         path: `/v1/betaTesterInvitations`,
         method: "POST",
         body: data,
@@ -11991,7 +11972,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BetaTestersResponse, ErrorResponse>({
+      this.request<BetaTestersResponse>({
         path: `/v1/betaTesters`,
         method: "GET",
         query: query,
@@ -12009,7 +11990,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     betaTestersCreateInstance: (data: BetaTesterCreateRequest, params: RequestParams = {}) =>
-      this.request<BetaTesterResponse, ErrorResponse>({
+      this.request<BetaTesterResponse>({
         path: `/v1/betaTesters`,
         method: "POST",
         body: data,
@@ -12128,7 +12109,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BetaTesterResponse, ErrorResponse>({
+      this.request<BetaTesterResponse>({
         path: `/v1/betaTesters/${id}`,
         method: "GET",
         query: query,
@@ -12146,7 +12127,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     betaTestersDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/betaTesters/${id}`,
         method: "DELETE",
         secure: true,
@@ -12197,7 +12178,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BuildBetaDetailsResponse, ErrorResponse>({
+      this.request<BuildBetaDetailsResponse>({
         path: `/v1/buildBetaDetails`,
         method: "GET",
         query: query,
@@ -12248,7 +12229,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BuildBetaDetailResponse, ErrorResponse>({
+      this.request<BuildBetaDetailResponse>({
         path: `/v1/buildBetaDetails/${id}`,
         method: "GET",
         query: query,
@@ -12266,7 +12247,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     buildBetaDetailsUpdateInstance: (id: string, data: BuildBetaDetailUpdateRequest, params: RequestParams = {}) =>
-      this.request<BuildBetaDetailResponse, ErrorResponse>({
+      this.request<BuildBetaDetailResponse>({
         path: `/v1/buildBetaDetails/${id}`,
         method: "PATCH",
         body: data,
@@ -12285,7 +12266,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     buildBetaNotificationsCreateInstance: (data: BuildBetaNotificationCreateRequest, params: RequestParams = {}) =>
-      this.request<BuildBetaNotificationResponse, ErrorResponse>({
+      this.request<BuildBetaNotificationResponse>({
         path: `/v1/buildBetaNotifications`,
         method: "POST",
         body: data,
@@ -12472,7 +12453,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BuildsResponse, ErrorResponse>({
+      this.request<BuildsResponse>({
         path: `/v1/builds`,
         method: "GET",
         query: query,
@@ -12632,7 +12613,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BuildResponse, ErrorResponse>({
+      this.request<BuildResponse>({
         path: `/v1/builds/${id}`,
         method: "GET",
         query: query,
@@ -12650,7 +12631,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     buildsUpdateInstance: (id: string, data: BuildUpdateRequest, params: RequestParams = {}) =>
-      this.request<BuildResponse, ErrorResponse>({
+      this.request<BuildResponse>({
         path: `/v1/builds/${id}`,
         method: "PATCH",
         body: data,
@@ -12669,7 +12650,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     bundleIdCapabilitiesCreateInstance: (data: BundleIdCapabilityCreateRequest, params: RequestParams = {}) =>
-      this.request<BundleIdCapabilityResponse, ErrorResponse>({
+      this.request<BundleIdCapabilityResponse>({
         path: `/v1/bundleIdCapabilities`,
         method: "POST",
         body: data,
@@ -12692,7 +12673,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: BundleIdCapabilityUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<BundleIdCapabilityResponse, ErrorResponse>({
+      this.request<BundleIdCapabilityResponse>({
         path: `/v1/bundleIdCapabilities/${id}`,
         method: "PATCH",
         body: data,
@@ -12711,7 +12692,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     bundleIdCapabilitiesDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/bundleIdCapabilities/${id}`,
         method: "DELETE",
         secure: true,
@@ -12815,7 +12796,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BundleIdsResponse, ErrorResponse>({
+      this.request<BundleIdsResponse>({
         path: `/v1/bundleIds`,
         method: "GET",
         query: query,
@@ -12833,7 +12814,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     bundleIdsCreateInstance: (data: BundleIdCreateRequest, params: RequestParams = {}) =>
-      this.request<BundleIdResponse, ErrorResponse>({
+      this.request<BundleIdResponse>({
         path: `/v1/bundleIds`,
         method: "POST",
         body: data,
@@ -12923,7 +12904,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BundleIdResponse, ErrorResponse>({
+      this.request<BundleIdResponse>({
         path: `/v1/bundleIds/${id}`,
         method: "GET",
         query: query,
@@ -12941,7 +12922,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     bundleIdsUpdateInstance: (id: string, data: BundleIdUpdateRequest, params: RequestParams = {}) =>
-      this.request<BundleIdResponse, ErrorResponse>({
+      this.request<BundleIdResponse>({
         path: `/v1/bundleIds/${id}`,
         method: "PATCH",
         body: data,
@@ -12960,7 +12941,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     bundleIdsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/bundleIds/${id}`,
         method: "DELETE",
         secure: true,
@@ -13017,7 +12998,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CertificatesResponse, ErrorResponse>({
+      this.request<CertificatesResponse>({
         path: `/v1/certificates`,
         method: "GET",
         query: query,
@@ -13035,7 +13016,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     certificatesCreateInstance: (data: CertificateCreateRequest, params: RequestParams = {}) =>
-      this.request<CertificateResponse, ErrorResponse>({
+      this.request<CertificateResponse>({
         path: `/v1/certificates`,
         method: "POST",
         body: data,
@@ -13069,7 +13050,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CertificateResponse, ErrorResponse>({
+      this.request<CertificateResponse>({
         path: `/v1/certificates/${id}`,
         method: "GET",
         query: query,
@@ -13087,7 +13068,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     certificatesDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/certificates/${id}`,
         method: "DELETE",
         secure: true,
@@ -13107,7 +13088,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[ciArtifacts]"?: ("downloadUrl" | "fileName" | "fileSize" | "fileType")[] },
       params: RequestParams = {},
     ) =>
-      this.request<CiArtifactResponse, ErrorResponse>({
+      this.request<CiArtifactResponse>({
         path: `/v1/ciArtifacts/${id}`,
         method: "GET",
         query: query,
@@ -13178,7 +13159,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CiBuildActionResponse, ErrorResponse>({
+      this.request<CiBuildActionResponse>({
         path: `/v1/ciBuildActions/${id}`,
         method: "GET",
         query: query,
@@ -13196,7 +13177,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     ciBuildRunsCreateInstance: (data: CiBuildRunCreateRequest, params: RequestParams = {}) =>
-      this.request<CiBuildRunResponse, ErrorResponse>({
+      this.request<CiBuildRunResponse>({
         path: `/v1/ciBuildRuns`,
         method: "POST",
         body: data,
@@ -13285,7 +13266,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CiBuildRunResponse, ErrorResponse>({
+      this.request<CiBuildRunResponse>({
         path: `/v1/ciBuildRuns/${id}`,
         method: "GET",
         query: query,
@@ -13307,7 +13288,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[ciIssues]"?: ("category" | "fileSource" | "issueType" | "message")[] },
       params: RequestParams = {},
     ) =>
-      this.request<CiIssueResponse, ErrorResponse>({
+      this.request<CiIssueResponse>({
         path: `/v1/ciIssues/${id}`,
         method: "GET",
         query: query,
@@ -13334,7 +13315,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CiMacOsVersionsResponse, ErrorResponse>({
+      this.request<CiMacOsVersionsResponse>({
         path: `/v1/ciMacOsVersions`,
         method: "GET",
         query: query,
@@ -13361,7 +13342,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CiMacOsVersionResponse, ErrorResponse>({
+      this.request<CiMacOsVersionResponse>({
         path: `/v1/ciMacOsVersions/${id}`,
         method: "GET",
         query: query,
@@ -13492,7 +13473,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CiProductsResponse, ErrorResponse>({
+      this.request<CiProductsResponse>({
         path: `/v1/ciProducts`,
         method: "GET",
         query: query,
@@ -13621,7 +13602,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CiProductResponse, ErrorResponse>({
+      this.request<CiProductResponse>({
         path: `/v1/ciProducts/${id}`,
         method: "GET",
         query: query,
@@ -13639,7 +13620,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     ciProductsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/ciProducts/${id}`,
         method: "DELETE",
         secure: true,
@@ -13668,7 +13649,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CiTestResultResponse, ErrorResponse>({
+      this.request<CiTestResultResponse>({
         path: `/v1/ciTestResults/${id}`,
         method: "GET",
         query: query,
@@ -13686,7 +13667,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     ciWorkflowsCreateInstance: (data: CiWorkflowCreateRequest, params: RequestParams = {}) =>
-      this.request<CiWorkflowResponse, ErrorResponse>({
+      this.request<CiWorkflowResponse>({
         path: `/v1/ciWorkflows`,
         method: "POST",
         body: data,
@@ -13764,7 +13745,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CiWorkflowResponse, ErrorResponse>({
+      this.request<CiWorkflowResponse>({
         path: `/v1/ciWorkflows/${id}`,
         method: "GET",
         query: query,
@@ -13782,7 +13763,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     ciWorkflowsUpdateInstance: (id: string, data: CiWorkflowUpdateRequest, params: RequestParams = {}) =>
-      this.request<CiWorkflowResponse, ErrorResponse>({
+      this.request<CiWorkflowResponse>({
         path: `/v1/ciWorkflows/${id}`,
         method: "PATCH",
         body: data,
@@ -13801,7 +13782,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     ciWorkflowsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/ciWorkflows/${id}`,
         method: "DELETE",
         secure: true,
@@ -13826,7 +13807,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CiXcodeVersionsResponse, ErrorResponse>({
+      this.request<CiXcodeVersionsResponse>({
         path: `/v1/ciXcodeVersions`,
         method: "GET",
         query: query,
@@ -13853,7 +13834,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CiXcodeVersionResponse, ErrorResponse>({
+      this.request<CiXcodeVersionResponse>({
         path: `/v1/ciXcodeVersions/${id}`,
         method: "GET",
         query: query,
@@ -13871,7 +13852,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     customerReviewResponsesCreateInstance: (data: CustomerReviewResponseV1CreateRequest, params: RequestParams = {}) =>
-      this.request<CustomerReviewResponseV1Response, ErrorResponse>({
+      this.request<CustomerReviewResponseV1Response>({
         path: `/v1/customerReviewResponses`,
         method: "POST",
         body: data,
@@ -13897,7 +13878,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CustomerReviewResponseV1Response, ErrorResponse>({
+      this.request<CustomerReviewResponseV1Response>({
         path: `/v1/customerReviewResponses/${id}`,
         method: "GET",
         query: query,
@@ -13915,7 +13896,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     customerReviewResponsesDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/customerReviewResponses/${id}`,
         method: "DELETE",
         secure: true,
@@ -13947,7 +13928,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CustomerReviewResponse, ErrorResponse>({
+      this.request<CustomerReviewResponse>({
         path: `/v1/customerReviews/${id}`,
         method: "GET",
         query: query,
@@ -13977,7 +13958,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<DevicesResponse, ErrorResponse>({
+      this.request<DevicesResponse>({
         path: `/v1/devices`,
         method: "GET",
         query: query,
@@ -13995,7 +13976,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     devicesCreateInstance: (data: DeviceCreateRequest, params: RequestParams = {}) =>
-      this.request<DeviceResponse, ErrorResponse>({
+      this.request<DeviceResponse>({
         path: `/v1/devices`,
         method: "POST",
         body: data,
@@ -14020,7 +14001,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<DeviceResponse, ErrorResponse>({
+      this.request<DeviceResponse>({
         path: `/v1/devices/${id}`,
         method: "GET",
         query: query,
@@ -14038,7 +14019,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     devicesUpdateInstance: (id: string, data: DeviceUpdateRequest, params: RequestParams = {}) =>
-      this.request<DeviceResponse, ErrorResponse>({
+      this.request<DeviceResponse>({
         path: `/v1/devices/${id}`,
         method: "PATCH",
         body: data,
@@ -14057,7 +14038,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     endUserLicenseAgreementsCreateInstance: (data: EndUserLicenseAgreementCreateRequest, params: RequestParams = {}) =>
-      this.request<EndUserLicenseAgreementResponse, ErrorResponse>({
+      this.request<EndUserLicenseAgreementResponse>({
         path: `/v1/endUserLicenseAgreements`,
         method: "POST",
         body: data,
@@ -14085,7 +14066,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<EndUserLicenseAgreementResponse, ErrorResponse>({
+      this.request<EndUserLicenseAgreementResponse>({
         path: `/v1/endUserLicenseAgreements/${id}`,
         method: "GET",
         query: query,
@@ -14107,7 +14088,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: EndUserLicenseAgreementUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<EndUserLicenseAgreementResponse, ErrorResponse>({
+      this.request<EndUserLicenseAgreementResponse>({
         path: `/v1/endUserLicenseAgreements/${id}`,
         method: "PATCH",
         body: data,
@@ -14126,7 +14107,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     endUserLicenseAgreementsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/endUserLicenseAgreements/${id}`,
         method: "DELETE",
         secure: true,
@@ -14150,7 +14131,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<Gzip, ErrorResponse>({
+      this.request<Gzip>({
         path: `/v1/financeReports`,
         method: "GET",
         query: query,
@@ -14170,7 +14151,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: InAppPurchaseAppStoreReviewScreenshotCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<InAppPurchaseAppStoreReviewScreenshotResponse, ErrorResponse>({
+      this.request<InAppPurchaseAppStoreReviewScreenshotResponse>({
         path: `/v1/inAppPurchaseAppStoreReviewScreenshots`,
         method: "POST",
         body: data,
@@ -14207,7 +14188,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<InAppPurchaseAppStoreReviewScreenshotResponse, ErrorResponse>({
+      this.request<InAppPurchaseAppStoreReviewScreenshotResponse>({
         path: `/v1/inAppPurchaseAppStoreReviewScreenshots/${id}`,
         method: "GET",
         query: query,
@@ -14229,7 +14210,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: InAppPurchaseAppStoreReviewScreenshotUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<InAppPurchaseAppStoreReviewScreenshotResponse, ErrorResponse>({
+      this.request<InAppPurchaseAppStoreReviewScreenshotResponse>({
         path: `/v1/inAppPurchaseAppStoreReviewScreenshots/${id}`,
         method: "PATCH",
         body: data,
@@ -14248,7 +14229,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     inAppPurchaseAppStoreReviewScreenshotsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/inAppPurchaseAppStoreReviewScreenshots/${id}`,
         method: "DELETE",
         secure: true,
@@ -14271,7 +14252,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<InAppPurchaseContentResponse, ErrorResponse>({
+      this.request<InAppPurchaseContentResponse>({
         path: `/v1/inAppPurchaseContents/${id}`,
         method: "GET",
         query: query,
@@ -14292,7 +14273,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: InAppPurchaseLocalizationCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<InAppPurchaseLocalizationResponse, ErrorResponse>({
+      this.request<InAppPurchaseLocalizationResponse>({
         path: `/v1/inAppPurchaseLocalizations`,
         method: "POST",
         body: data,
@@ -14318,7 +14299,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<InAppPurchaseLocalizationResponse, ErrorResponse>({
+      this.request<InAppPurchaseLocalizationResponse>({
         path: `/v1/inAppPurchaseLocalizations/${id}`,
         method: "GET",
         query: query,
@@ -14340,7 +14321,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: InAppPurchaseLocalizationUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<InAppPurchaseLocalizationResponse, ErrorResponse>({
+      this.request<InAppPurchaseLocalizationResponse>({
         path: `/v1/inAppPurchaseLocalizations/${id}`,
         method: "PATCH",
         body: data,
@@ -14359,7 +14340,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     inAppPurchaseLocalizationsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/inAppPurchaseLocalizations/${id}`,
         method: "DELETE",
         secure: true,
@@ -14378,7 +14359,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: InAppPurchasePriceScheduleCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<InAppPurchasePriceScheduleResponse, ErrorResponse>({
+      this.request<InAppPurchasePriceScheduleResponse>({
         path: `/v1/inAppPurchasePriceSchedules`,
         method: "POST",
         body: data,
@@ -14406,7 +14387,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<InAppPurchasePriceScheduleResponse, ErrorResponse>({
+      this.request<InAppPurchasePriceScheduleResponse>({
         path: `/v1/inAppPurchasePriceSchedules/${id}`,
         method: "GET",
         query: query,
@@ -14424,7 +14405,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     inAppPurchaseSubmissionsCreateInstance: (data: InAppPurchaseSubmissionCreateRequest, params: RequestParams = {}) =>
-      this.request<InAppPurchaseSubmissionResponse, ErrorResponse>({
+      this.request<InAppPurchaseSubmissionResponse>({
         path: `/v1/inAppPurchaseSubmissions`,
         method: "POST",
         body: data,
@@ -14451,7 +14432,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<InAppPurchaseResponse, ErrorResponse>({
+      this.request<InAppPurchaseResponse>({
         path: `/v1/inAppPurchases/${id}`,
         method: "GET",
         query: query,
@@ -14551,7 +14532,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<PreReleaseVersionsResponse, ErrorResponse>({
+      this.request<PreReleaseVersionsResponse>({
         path: `/v1/preReleaseVersions`,
         method: "GET",
         query: query,
@@ -14643,7 +14624,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<PrereleaseVersionResponse, ErrorResponse>({
+      this.request<PrereleaseVersionResponse>({
         path: `/v1/preReleaseVersions/${id}`,
         method: "GET",
         query: query,
@@ -14722,7 +14703,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<ProfilesResponse, ErrorResponse>({
+      this.request<ProfilesResponse>({
         path: `/v1/profiles`,
         method: "GET",
         query: query,
@@ -14740,7 +14721,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     profilesCreateInstance: (data: ProfileCreateRequest, params: RequestParams = {}) =>
-      this.request<ProfileResponse, ErrorResponse>({
+      this.request<ProfileResponse>({
         path: `/v1/profiles`,
         method: "POST",
         body: data,
@@ -14800,7 +14781,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<ProfileResponse, ErrorResponse>({
+      this.request<ProfileResponse>({
         path: `/v1/profiles/${id}`,
         method: "GET",
         query: query,
@@ -14818,7 +14799,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     profilesDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/profiles/${id}`,
         method: "DELETE",
         secure: true,
@@ -14834,7 +14815,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     promotedPurchaseImagesCreateInstance: (data: PromotedPurchaseImageCreateRequest, params: RequestParams = {}) =>
-      this.request<PromotedPurchaseImageResponse, ErrorResponse>({
+      this.request<PromotedPurchaseImageResponse>({
         path: `/v1/promotedPurchaseImages`,
         method: "POST",
         body: data,
@@ -14871,7 +14852,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<PromotedPurchaseImageResponse, ErrorResponse>({
+      this.request<PromotedPurchaseImageResponse>({
         path: `/v1/promotedPurchaseImages/${id}`,
         method: "GET",
         query: query,
@@ -14893,7 +14874,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: PromotedPurchaseImageUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<PromotedPurchaseImageResponse, ErrorResponse>({
+      this.request<PromotedPurchaseImageResponse>({
         path: `/v1/promotedPurchaseImages/${id}`,
         method: "PATCH",
         body: data,
@@ -14912,7 +14893,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     promotedPurchaseImagesDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/promotedPurchaseImages/${id}`,
         method: "DELETE",
         secure: true,
@@ -14928,7 +14909,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     promotedPurchasesCreateInstance: (data: PromotedPurchaseCreateRequest, params: RequestParams = {}) =>
-      this.request<PromotedPurchaseResponse, ErrorResponse>({
+      this.request<PromotedPurchaseResponse>({
         path: `/v1/promotedPurchases`,
         method: "POST",
         body: data,
@@ -14975,7 +14956,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<PromotedPurchaseResponse, ErrorResponse>({
+      this.request<PromotedPurchaseResponse>({
         path: `/v1/promotedPurchases/${id}`,
         method: "GET",
         query: query,
@@ -14993,7 +14974,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     promotedPurchasesUpdateInstance: (id: string, data: PromotedPurchaseUpdateRequest, params: RequestParams = {}) =>
-      this.request<PromotedPurchaseResponse, ErrorResponse>({
+      this.request<PromotedPurchaseResponse>({
         path: `/v1/promotedPurchases/${id}`,
         method: "PATCH",
         body: data,
@@ -15012,7 +14993,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     promotedPurchasesDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/promotedPurchases/${id}`,
         method: "DELETE",
         secure: true,
@@ -15028,7 +15009,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     reviewSubmissionItemsCreateInstance: (data: ReviewSubmissionItemCreateRequest, params: RequestParams = {}) =>
-      this.request<ReviewSubmissionItemResponse, ErrorResponse>({
+      this.request<ReviewSubmissionItemResponse>({
         path: `/v1/reviewSubmissionItems`,
         method: "POST",
         body: data,
@@ -15051,7 +15032,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: ReviewSubmissionItemUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<ReviewSubmissionItemResponse, ErrorResponse>({
+      this.request<ReviewSubmissionItemResponse>({
         path: `/v1/reviewSubmissionItems/${id}`,
         method: "PATCH",
         body: data,
@@ -15070,7 +15051,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     reviewSubmissionItemsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/reviewSubmissionItems/${id}`,
         method: "DELETE",
         secure: true,
@@ -15124,7 +15105,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<ReviewSubmissionsResponse, ErrorResponse>({
+      this.request<ReviewSubmissionsResponse>({
         path: `/v1/reviewSubmissions`,
         method: "GET",
         query: query,
@@ -15142,7 +15123,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     reviewSubmissionsCreateInstance: (data: ReviewSubmissionCreateRequest, params: RequestParams = {}) =>
-      this.request<ReviewSubmissionResponse, ErrorResponse>({
+      this.request<ReviewSubmissionResponse>({
         path: `/v1/reviewSubmissions`,
         method: "POST",
         body: data,
@@ -15188,7 +15169,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<ReviewSubmissionResponse, ErrorResponse>({
+      this.request<ReviewSubmissionResponse>({
         path: `/v1/reviewSubmissions/${id}`,
         method: "GET",
         query: query,
@@ -15206,7 +15187,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     reviewSubmissionsUpdateInstance: (id: string, data: ReviewSubmissionUpdateRequest, params: RequestParams = {}) =>
-      this.request<ReviewSubmissionResponse, ErrorResponse>({
+      this.request<ReviewSubmissionResponse>({
         path: `/v1/reviewSubmissions/${id}`,
         method: "PATCH",
         body: data,
@@ -15225,7 +15206,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     routingAppCoveragesCreateInstance: (data: RoutingAppCoverageCreateRequest, params: RequestParams = {}) =>
-      this.request<RoutingAppCoverageResponse, ErrorResponse>({
+      this.request<RoutingAppCoverageResponse>({
         path: `/v1/routingAppCoverages`,
         method: "POST",
         body: data,
@@ -15259,7 +15240,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<RoutingAppCoverageResponse, ErrorResponse>({
+      this.request<RoutingAppCoverageResponse>({
         path: `/v1/routingAppCoverages/${id}`,
         method: "GET",
         query: query,
@@ -15281,7 +15262,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: RoutingAppCoverageUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<RoutingAppCoverageResponse, ErrorResponse>({
+      this.request<RoutingAppCoverageResponse>({
         path: `/v1/routingAppCoverages/${id}`,
         method: "PATCH",
         body: data,
@@ -15300,7 +15281,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     routingAppCoveragesDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/routingAppCoverages/${id}`,
         method: "DELETE",
         secure: true,
@@ -15334,7 +15315,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<Gzip, ErrorResponse>({
+      this.request<Gzip>({
         path: `/v1/salesReports`,
         method: "GET",
         query: query,
@@ -15358,7 +15339,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<ScmGitReferenceResponse, ErrorResponse>({
+      this.request<ScmGitReferenceResponse>({
         path: `/v1/scmGitReferences/${id}`,
         method: "GET",
         query: query,
@@ -15393,7 +15374,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<ScmProvidersResponse, ErrorResponse>({
+      this.request<ScmProvidersResponse>({
         path: `/v1/scmProviders`,
         method: "GET",
         query: query,
@@ -15428,7 +15409,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<ScmProviderResponse, ErrorResponse>({
+      this.request<ScmProviderResponse>({
         path: `/v1/scmProviders/${id}`,
         method: "GET",
         query: query,
@@ -15466,7 +15447,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<ScmPullRequestResponse, ErrorResponse>({
+      this.request<ScmPullRequestResponse>({
         path: `/v1/scmPullRequests/${id}`,
         method: "GET",
         query: query,
@@ -15517,7 +15498,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<ScmRepositoriesResponse, ErrorResponse>({
+      this.request<ScmRepositoriesResponse>({
         path: `/v1/scmRepositories`,
         method: "GET",
         query: query,
@@ -15567,7 +15548,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<ScmRepositoryResponse, ErrorResponse>({
+      this.request<ScmRepositoryResponse>({
         path: `/v1/scmRepositories/${id}`,
         method: "GET",
         query: query,
@@ -15588,7 +15569,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: SubscriptionAppStoreReviewScreenshotCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionAppStoreReviewScreenshotResponse, ErrorResponse>({
+      this.request<SubscriptionAppStoreReviewScreenshotResponse>({
         path: `/v1/subscriptionAppStoreReviewScreenshots`,
         method: "POST",
         body: data,
@@ -15625,7 +15606,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionAppStoreReviewScreenshotResponse, ErrorResponse>({
+      this.request<SubscriptionAppStoreReviewScreenshotResponse>({
         path: `/v1/subscriptionAppStoreReviewScreenshots/${id}`,
         method: "GET",
         query: query,
@@ -15647,7 +15628,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: SubscriptionAppStoreReviewScreenshotUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionAppStoreReviewScreenshotResponse, ErrorResponse>({
+      this.request<SubscriptionAppStoreReviewScreenshotResponse>({
         path: `/v1/subscriptionAppStoreReviewScreenshots/${id}`,
         method: "PATCH",
         body: data,
@@ -15666,7 +15647,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     subscriptionAppStoreReviewScreenshotsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/subscriptionAppStoreReviewScreenshots/${id}`,
         method: "DELETE",
         secure: true,
@@ -15686,7 +15667,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[subscriptionGracePeriods]"?: ("app" | "optIn")[] },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionGracePeriodResponse, ErrorResponse>({
+      this.request<SubscriptionGracePeriodResponse>({
         path: `/v1/subscriptionGracePeriods/${id}`,
         method: "GET",
         query: query,
@@ -15708,7 +15689,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: SubscriptionGracePeriodUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionGracePeriodResponse, ErrorResponse>({
+      this.request<SubscriptionGracePeriodResponse>({
         path: `/v1/subscriptionGracePeriods/${id}`,
         method: "PATCH",
         body: data,
@@ -15730,7 +15711,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: SubscriptionGroupLocalizationCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionGroupLocalizationResponse, ErrorResponse>({
+      this.request<SubscriptionGroupLocalizationResponse>({
         path: `/v1/subscriptionGroupLocalizations`,
         method: "POST",
         body: data,
@@ -15762,7 +15743,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionGroupLocalizationResponse, ErrorResponse>({
+      this.request<SubscriptionGroupLocalizationResponse>({
         path: `/v1/subscriptionGroupLocalizations/${id}`,
         method: "GET",
         query: query,
@@ -15784,7 +15765,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: SubscriptionGroupLocalizationUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionGroupLocalizationResponse, ErrorResponse>({
+      this.request<SubscriptionGroupLocalizationResponse>({
         path: `/v1/subscriptionGroupLocalizations/${id}`,
         method: "PATCH",
         body: data,
@@ -15803,7 +15784,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     subscriptionGroupLocalizationsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/subscriptionGroupLocalizations/${id}`,
         method: "DELETE",
         secure: true,
@@ -15822,7 +15803,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: SubscriptionGroupSubmissionCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionGroupSubmissionResponse, ErrorResponse>({
+      this.request<SubscriptionGroupSubmissionResponse>({
         path: `/v1/subscriptionGroupSubmissions`,
         method: "POST",
         body: data,
@@ -15841,7 +15822,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     subscriptionGroupsCreateInstance: (data: SubscriptionGroupCreateRequest, params: RequestParams = {}) =>
-      this.request<SubscriptionGroupResponse, ErrorResponse>({
+      this.request<SubscriptionGroupResponse>({
         path: `/v1/subscriptionGroups`,
         method: "POST",
         body: data,
@@ -15895,7 +15876,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionGroupResponse, ErrorResponse>({
+      this.request<SubscriptionGroupResponse>({
         path: `/v1/subscriptionGroups/${id}`,
         method: "GET",
         query: query,
@@ -15913,7 +15894,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     subscriptionGroupsUpdateInstance: (id: string, data: SubscriptionGroupUpdateRequest, params: RequestParams = {}) =>
-      this.request<SubscriptionGroupResponse, ErrorResponse>({
+      this.request<SubscriptionGroupResponse>({
         path: `/v1/subscriptionGroups/${id}`,
         method: "PATCH",
         body: data,
@@ -15932,7 +15913,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     subscriptionGroupsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/subscriptionGroups/${id}`,
         method: "DELETE",
         secure: true,
@@ -15951,7 +15932,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: SubscriptionIntroductoryOfferCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionIntroductoryOfferResponse, ErrorResponse>({
+      this.request<SubscriptionIntroductoryOfferResponse>({
         path: `/v1/subscriptionIntroductoryOffers`,
         method: "POST",
         body: data,
@@ -15974,7 +15955,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: SubscriptionIntroductoryOfferUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionIntroductoryOfferResponse, ErrorResponse>({
+      this.request<SubscriptionIntroductoryOfferResponse>({
         path: `/v1/subscriptionIntroductoryOffers/${id}`,
         method: "PATCH",
         body: data,
@@ -15993,7 +15974,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     subscriptionIntroductoryOffersDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/subscriptionIntroductoryOffers/${id}`,
         method: "DELETE",
         secure: true,
@@ -16012,7 +15993,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: SubscriptionLocalizationCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionLocalizationResponse, ErrorResponse>({
+      this.request<SubscriptionLocalizationResponse>({
         path: `/v1/subscriptionLocalizations`,
         method: "POST",
         body: data,
@@ -16038,7 +16019,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionLocalizationResponse, ErrorResponse>({
+      this.request<SubscriptionLocalizationResponse>({
         path: `/v1/subscriptionLocalizations/${id}`,
         method: "GET",
         query: query,
@@ -16060,7 +16041,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: SubscriptionLocalizationUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionLocalizationResponse, ErrorResponse>({
+      this.request<SubscriptionLocalizationResponse>({
         path: `/v1/subscriptionLocalizations/${id}`,
         method: "PATCH",
         body: data,
@@ -16079,7 +16060,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     subscriptionLocalizationsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/subscriptionLocalizations/${id}`,
         method: "DELETE",
         secure: true,
@@ -16098,7 +16079,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: SubscriptionOfferCodeCustomCodeCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionOfferCodeCustomCodeResponse, ErrorResponse>({
+      this.request<SubscriptionOfferCodeCustomCodeResponse>({
         path: `/v1/subscriptionOfferCodeCustomCodes`,
         method: "POST",
         body: data,
@@ -16131,7 +16112,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionOfferCodeCustomCodeResponse, ErrorResponse>({
+      this.request<SubscriptionOfferCodeCustomCodeResponse>({
         path: `/v1/subscriptionOfferCodeCustomCodes/${id}`,
         method: "GET",
         query: query,
@@ -16153,7 +16134,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: SubscriptionOfferCodeCustomCodeUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionOfferCodeCustomCodeResponse, ErrorResponse>({
+      this.request<SubscriptionOfferCodeCustomCodeResponse>({
         path: `/v1/subscriptionOfferCodeCustomCodes/${id}`,
         method: "PATCH",
         body: data,
@@ -16175,7 +16156,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: SubscriptionOfferCodeOneTimeUseCodeCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionOfferCodeOneTimeUseCodeResponse, ErrorResponse>({
+      this.request<SubscriptionOfferCodeOneTimeUseCodeResponse>({
         path: `/v1/subscriptionOfferCodeOneTimeUseCodes`,
         method: "POST",
         body: data,
@@ -16209,7 +16190,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionOfferCodeOneTimeUseCodeResponse, ErrorResponse>({
+      this.request<SubscriptionOfferCodeOneTimeUseCodeResponse>({
         path: `/v1/subscriptionOfferCodeOneTimeUseCodes/${id}`,
         method: "GET",
         query: query,
@@ -16231,7 +16212,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: SubscriptionOfferCodeOneTimeUseCodeUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionOfferCodeOneTimeUseCodeResponse, ErrorResponse>({
+      this.request<SubscriptionOfferCodeOneTimeUseCodeResponse>({
         path: `/v1/subscriptionOfferCodeOneTimeUseCodes/${id}`,
         method: "PATCH",
         body: data,
@@ -16250,7 +16231,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     subscriptionOfferCodesCreateInstance: (data: SubscriptionOfferCodeCreateRequest, params: RequestParams = {}) =>
-      this.request<SubscriptionOfferCodeResponse, ErrorResponse>({
+      this.request<SubscriptionOfferCodeResponse>({
         path: `/v1/subscriptionOfferCodes`,
         method: "POST",
         body: data,
@@ -16309,7 +16290,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionOfferCodeResponse, ErrorResponse>({
+      this.request<SubscriptionOfferCodeResponse>({
         path: `/v1/subscriptionOfferCodes/${id}`,
         method: "GET",
         query: query,
@@ -16331,7 +16312,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: SubscriptionOfferCodeUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionOfferCodeResponse, ErrorResponse>({
+      this.request<SubscriptionOfferCodeResponse>({
         path: `/v1/subscriptionOfferCodes/${id}`,
         method: "PATCH",
         body: data,
@@ -16364,7 +16345,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionPricePointResponse, ErrorResponse>({
+      this.request<SubscriptionPricePointResponse>({
         path: `/v1/subscriptionPricePoints/${id}`,
         method: "GET",
         query: query,
@@ -16382,7 +16363,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     subscriptionPricesCreateInstance: (data: SubscriptionPriceCreateRequest, params: RequestParams = {}) =>
-      this.request<SubscriptionPriceResponse, ErrorResponse>({
+      this.request<SubscriptionPriceResponse>({
         path: `/v1/subscriptionPrices`,
         method: "POST",
         body: data,
@@ -16401,7 +16382,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     subscriptionPricesDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/subscriptionPrices/${id}`,
         method: "DELETE",
         secure: true,
@@ -16420,7 +16401,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: SubscriptionPromotionalOfferCreateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionPromotionalOfferResponse, ErrorResponse>({
+      this.request<SubscriptionPromotionalOfferResponse>({
         path: `/v1/subscriptionPromotionalOffers`,
         method: "POST",
         body: data,
@@ -16456,7 +16437,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionPromotionalOfferResponse, ErrorResponse>({
+      this.request<SubscriptionPromotionalOfferResponse>({
         path: `/v1/subscriptionPromotionalOffers/${id}`,
         method: "GET",
         query: query,
@@ -16478,7 +16459,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: SubscriptionPromotionalOfferUpdateRequest,
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionPromotionalOfferResponse, ErrorResponse>({
+      this.request<SubscriptionPromotionalOfferResponse>({
         path: `/v1/subscriptionPromotionalOffers/${id}`,
         method: "PATCH",
         body: data,
@@ -16497,7 +16478,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     subscriptionPromotionalOffersDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/subscriptionPromotionalOffers/${id}`,
         method: "DELETE",
         secure: true,
@@ -16513,7 +16494,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     subscriptionSubmissionsCreateInstance: (data: SubscriptionSubmissionCreateRequest, params: RequestParams = {}) =>
-      this.request<SubscriptionSubmissionResponse, ErrorResponse>({
+      this.request<SubscriptionSubmissionResponse>({
         path: `/v1/subscriptionSubmissions`,
         method: "POST",
         body: data,
@@ -16532,7 +16513,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     subscriptionsCreateInstance: (data: SubscriptionCreateRequest, params: RequestParams = {}) =>
-      this.request<SubscriptionResponse, ErrorResponse>({
+      this.request<SubscriptionResponse>({
         path: `/v1/subscriptions`,
         method: "POST",
         body: data,
@@ -16661,7 +16642,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionResponse, ErrorResponse>({
+      this.request<SubscriptionResponse>({
         path: `/v1/subscriptions/${id}`,
         method: "GET",
         query: query,
@@ -16679,7 +16660,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     subscriptionsUpdateInstance: (id: string, data: SubscriptionUpdateRequest, params: RequestParams = {}) =>
-      this.request<SubscriptionResponse, ErrorResponse>({
+      this.request<SubscriptionResponse>({
         path: `/v1/subscriptions/${id}`,
         method: "PATCH",
         body: data,
@@ -16698,7 +16679,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     subscriptionsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/subscriptions/${id}`,
         method: "DELETE",
         secure: true,
@@ -16717,7 +16698,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[territories]"?: "currency"[]; limit?: number },
       params: RequestParams = {},
     ) =>
-      this.request<TerritoriesResponse, ErrorResponse>({
+      this.request<TerritoriesResponse>({
         path: `/v1/territories`,
         method: "GET",
         query: query,
@@ -16810,7 +16791,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<UserInvitationsResponse, ErrorResponse>({
+      this.request<UserInvitationsResponse>({
         path: `/v1/userInvitations`,
         method: "GET",
         query: query,
@@ -16828,7 +16809,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     userInvitationsCreateInstance: (data: UserInvitationCreateRequest, params: RequestParams = {}) =>
-      this.request<UserInvitationResponse, ErrorResponse>({
+      this.request<UserInvitationResponse>({
         path: `/v1/userInvitations`,
         method: "POST",
         body: data,
@@ -16904,7 +16885,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<UserInvitationResponse, ErrorResponse>({
+      this.request<UserInvitationResponse>({
         path: `/v1/userInvitations/${id}`,
         method: "GET",
         query: query,
@@ -16922,7 +16903,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     userInvitationsDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/userInvitations/${id}`,
         method: "DELETE",
         secure: true,
@@ -17012,7 +16993,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<UsersResponse, ErrorResponse>({
+      this.request<UsersResponse>({
         path: `/v1/users`,
         method: "GET",
         query: query,
@@ -17086,7 +17067,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<UserResponse, ErrorResponse>({
+      this.request<UserResponse>({
         path: `/v1/users/${id}`,
         method: "GET",
         query: query,
@@ -17104,7 +17085,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     usersUpdateInstance: (id: string, data: UserUpdateRequest, params: RequestParams = {}) =>
-      this.request<UserResponse, ErrorResponse>({
+      this.request<UserResponse>({
         path: `/v1/users/${id}`,
         method: "PATCH",
         body: data,
@@ -17123,7 +17104,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     usersDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/users/${id}`,
         method: "DELETE",
         secure: true,
@@ -17143,7 +17124,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[appCategories]"?: ("parent" | "platforms" | "subcategories")[] },
       params: RequestParams = {},
     ) =>
-      this.request<AppCategoryResponse, ErrorResponse>({
+      this.request<AppCategoryResponse>({
         path: `/v1/appCategories/${id}/parent`,
         method: "GET",
         query: query,
@@ -17165,7 +17146,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[appCategories]"?: ("parent" | "platforms" | "subcategories")[]; limit?: number },
       params: RequestParams = {},
     ) =>
-      this.request<AppCategoriesResponse, ErrorResponse>({
+      this.request<AppCategoriesResponse>({
         path: `/v1/appCategories/${id}/subcategories`,
         method: "GET",
         query: query,
@@ -17205,7 +17186,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppClipHeaderImageResponse, ErrorResponse>({
+      this.request<AppClipHeaderImageResponse>({
         path: `/v1/appClipDefaultExperienceLocalizations/${id}/appClipHeaderImage`,
         method: "GET",
         query: query,
@@ -17238,7 +17219,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppClipAppStoreReviewDetailResponse, ErrorResponse>({
+      this.request<AppClipAppStoreReviewDetailResponse>({
         path: `/v1/appClipDefaultExperiences/${id}/appClipAppStoreReviewDetail`,
         method: "GET",
         query: query,
@@ -17288,7 +17269,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppClipDefaultExperienceLocalizationsResponse, ErrorResponse>({
+      this.request<AppClipDefaultExperienceLocalizationsResponse>({
         path: `/v1/appClipDefaultExperiences/${id}/appClipDefaultExperienceLocalizations`,
         method: "GET",
         query: query,
@@ -17306,7 +17287,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appClipDefaultExperiencesReleaseWithAppStoreVersionGetToOneRelationship: (id: string, params: RequestParams = {}) =>
-      this.request<AppClipDefaultExperienceReleaseWithAppStoreVersionLinkageResponse, ErrorResponse>({
+      this.request<AppClipDefaultExperienceReleaseWithAppStoreVersionLinkageResponse>({
         path: `/v1/appClipDefaultExperiences/${id}/relationships/releaseWithAppStoreVersion`,
         method: "GET",
         secure: true,
@@ -17327,7 +17308,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppClipDefaultExperienceReleaseWithAppStoreVersionLinkageRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appClipDefaultExperiences/${id}/relationships/releaseWithAppStoreVersion`,
         method: "PATCH",
         body: data,
@@ -17530,7 +17511,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionResponse, ErrorResponse>({
+      this.request<AppStoreVersionResponse>({
         path: `/v1/appClipDefaultExperiences/${id}/releaseWithAppStoreVersion`,
         method: "GET",
         query: query,
@@ -17585,7 +17566,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppClipAdvancedExperiencesResponse, ErrorResponse>({
+      this.request<AppClipAdvancedExperiencesResponse>({
         path: `/v1/appClips/${id}/appClipAdvancedExperiences`,
         method: "GET",
         query: query,
@@ -17654,7 +17635,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppClipDefaultExperiencesResponse, ErrorResponse>({
+      this.request<AppClipDefaultExperiencesResponse>({
         path: `/v1/appClips/${id}/appClipDefaultExperiences`,
         method: "GET",
         query: query,
@@ -17749,7 +17730,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppPreviewSetsResponse, ErrorResponse>({
+      this.request<AppPreviewSetsResponse>({
         path: `/v1/appCustomProductPageLocalizations/${id}/appPreviewSets`,
         method: "GET",
         query: query,
@@ -17854,7 +17835,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppScreenshotSetsResponse, ErrorResponse>({
+      this.request<AppScreenshotSetsResponse>({
         path: `/v1/appCustomProductPageLocalizations/${id}/appScreenshotSets`,
         method: "GET",
         query: query,
@@ -17909,7 +17890,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppCustomProductPageLocalizationsResponse, ErrorResponse>({
+      this.request<AppCustomProductPageLocalizationsResponse>({
         path: `/v1/appCustomProductPageVersions/${id}/appCustomProductPageLocalizations`,
         method: "GET",
         query: query,
@@ -17967,7 +17948,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppCustomProductPageVersionsResponse, ErrorResponse>({
+      this.request<AppCustomProductPageVersionsResponse>({
         path: `/v1/appCustomProductPages/${id}/appCustomProductPageVersions`,
         method: "GET",
         query: query,
@@ -18030,7 +18011,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppResponse, ErrorResponse>({
+      this.request<AppResponse>({
         path: `/v1/appEncryptionDeclarations/${id}/app`,
         method: "GET",
         query: query,
@@ -18052,7 +18033,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppEncryptionDeclarationBuildsLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appEncryptionDeclarations/${id}/relationships/builds`,
         method: "POST",
         body: data,
@@ -18097,7 +18078,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppEventScreenshotsResponse, ErrorResponse>({
+      this.request<AppEventScreenshotsResponse>({
         path: `/v1/appEventLocalizations/${id}/appEventScreenshots`,
         method: "GET",
         query: query,
@@ -18143,7 +18124,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppEventVideoClipsResponse, ErrorResponse>({
+      this.request<AppEventVideoClipsResponse>({
         path: `/v1/appEventLocalizations/${id}/appEventVideoClips`,
         method: "GET",
         query: query,
@@ -18216,7 +18197,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppEventLocalizationsResponse, ErrorResponse>({
+      this.request<AppEventLocalizationsResponse>({
         path: `/v1/appEvents/${id}/localizations`,
         method: "GET",
         query: query,
@@ -18258,7 +18239,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AgeRatingDeclarationResponse, ErrorResponse>({
+      this.request<AgeRatingDeclarationResponse>({
         path: `/v1/appInfos/${id}/ageRatingDeclaration`,
         method: "GET",
         query: query,
@@ -18308,7 +18289,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppInfoLocalizationsResponse, ErrorResponse>({
+      this.request<AppInfoLocalizationsResponse>({
         path: `/v1/appInfos/${id}/appInfoLocalizations`,
         method: "GET",
         query: query,
@@ -18330,7 +18311,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[appCategories]"?: ("parent" | "platforms" | "subcategories")[] },
       params: RequestParams = {},
     ) =>
-      this.request<AppCategoryResponse, ErrorResponse>({
+      this.request<AppCategoryResponse>({
         path: `/v1/appInfos/${id}/primaryCategory`,
         method: "GET",
         query: query,
@@ -18352,7 +18333,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[appCategories]"?: ("parent" | "platforms" | "subcategories")[] },
       params: RequestParams = {},
     ) =>
-      this.request<AppCategoryResponse, ErrorResponse>({
+      this.request<AppCategoryResponse>({
         path: `/v1/appInfos/${id}/primarySubcategoryOne`,
         method: "GET",
         query: query,
@@ -18374,7 +18355,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[appCategories]"?: ("parent" | "platforms" | "subcategories")[] },
       params: RequestParams = {},
     ) =>
-      this.request<AppCategoryResponse, ErrorResponse>({
+      this.request<AppCategoryResponse>({
         path: `/v1/appInfos/${id}/primarySubcategoryTwo`,
         method: "GET",
         query: query,
@@ -18396,7 +18377,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[appCategories]"?: ("parent" | "platforms" | "subcategories")[] },
       params: RequestParams = {},
     ) =>
-      this.request<AppCategoryResponse, ErrorResponse>({
+      this.request<AppCategoryResponse>({
         path: `/v1/appInfos/${id}/secondaryCategory`,
         method: "GET",
         query: query,
@@ -18418,7 +18399,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[appCategories]"?: ("parent" | "platforms" | "subcategories")[] },
       params: RequestParams = {},
     ) =>
-      this.request<AppCategoryResponse, ErrorResponse>({
+      this.request<AppCategoryResponse>({
         path: `/v1/appInfos/${id}/secondarySubcategoryOne`,
         method: "GET",
         query: query,
@@ -18440,7 +18421,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[appCategories]"?: ("parent" | "platforms" | "subcategories")[] },
       params: RequestParams = {},
     ) =>
-      this.request<AppCategoryResponse, ErrorResponse>({
+      this.request<AppCategoryResponse>({
         path: `/v1/appInfos/${id}/secondarySubcategoryTwo`,
         method: "GET",
         query: query,
@@ -18462,7 +18443,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { limit?: number },
       params: RequestParams = {},
     ) =>
-      this.request<AppPreviewSetAppPreviewsLinkagesResponse, ErrorResponse>({
+      this.request<AppPreviewSetAppPreviewsLinkagesResponse>({
         path: `/v1/appPreviewSets/${id}/relationships/appPreviews`,
         method: "GET",
         query: query,
@@ -18484,7 +18465,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppPreviewSetAppPreviewsLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appPreviewSets/${id}/relationships/appPreviews`,
         method: "PATCH",
         body: data,
@@ -18529,7 +18510,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppPreviewsResponse, ErrorResponse>({
+      this.request<AppPreviewsResponse>({
         path: `/v1/appPreviewSets/${id}/appPreviews`,
         method: "GET",
         query: query,
@@ -18552,7 +18533,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[territories]"?: "currency"[] },
       params: RequestParams = {},
     ) =>
-      this.request<TerritoryResponse, ErrorResponse>({
+      this.request<TerritoryResponse>({
         path: `/v1/appPricePoints/${id}/territory`,
         method: "GET",
         query: query,
@@ -18582,7 +18563,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppPricePointsResponse, ErrorResponse>({
+      this.request<AppPricePointsResponse>({
         path: `/v1/appPriceTiers/${id}/pricePoints`,
         method: "GET",
         query: query,
@@ -18604,7 +18585,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { limit?: number },
       params: RequestParams = {},
     ) =>
-      this.request<AppScreenshotSetAppScreenshotsLinkagesResponse, ErrorResponse>({
+      this.request<AppScreenshotSetAppScreenshotsLinkagesResponse>({
         path: `/v1/appScreenshotSets/${id}/relationships/appScreenshots`,
         method: "GET",
         query: query,
@@ -18626,7 +18607,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppScreenshotSetAppScreenshotsLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appScreenshotSets/${id}/relationships/appScreenshots`,
         method: "PATCH",
         body: data,
@@ -18670,7 +18651,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppScreenshotsResponse, ErrorResponse>({
+      this.request<AppScreenshotsResponse>({
         path: `/v1/appScreenshotSets/${id}/appScreenshots`,
         method: "GET",
         query: query,
@@ -18716,7 +18697,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreReviewAttachmentsResponse, ErrorResponse>({
+      this.request<AppStoreReviewAttachmentsResponse>({
         path: `/v1/appStoreReviewDetails/${id}/appStoreReviewAttachments`,
         method: "GET",
         query: query,
@@ -18811,7 +18792,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppPreviewSetsResponse, ErrorResponse>({
+      this.request<AppPreviewSetsResponse>({
         path: `/v1/appStoreVersionExperimentTreatmentLocalizations/${id}/appPreviewSets`,
         method: "GET",
         query: query,
@@ -18916,7 +18897,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppScreenshotSetsResponse, ErrorResponse>({
+      this.request<AppScreenshotSetsResponse>({
         path: `/v1/appStoreVersionExperimentTreatmentLocalizations/${id}/appScreenshotSets`,
         method: "GET",
         query: query,
@@ -18972,7 +18953,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionExperimentTreatmentLocalizationsResponse, ErrorResponse>({
+      this.request<AppStoreVersionExperimentTreatmentLocalizationsResponse>({
         path: `/v1/appStoreVersionExperimentTreatments/${id}/appStoreVersionExperimentTreatmentLocalizations`,
         method: "GET",
         query: query,
@@ -19023,7 +19004,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionExperimentTreatmentsResponse, ErrorResponse>({
+      this.request<AppStoreVersionExperimentTreatmentsResponse>({
         path: `/v1/appStoreVersionExperiments/${id}/appStoreVersionExperimentTreatments`,
         method: "GET",
         query: query,
@@ -19118,7 +19099,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppPreviewSetsResponse, ErrorResponse>({
+      this.request<AppPreviewSetsResponse>({
         path: `/v1/appStoreVersionLocalizations/${id}/appPreviewSets`,
         method: "GET",
         query: query,
@@ -19223,7 +19204,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppScreenshotSetsResponse, ErrorResponse>({
+      this.request<AppScreenshotSetsResponse>({
         path: `/v1/appStoreVersionLocalizations/${id}/appScreenshotSets`,
         method: "GET",
         query: query,
@@ -19266,7 +19247,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AgeRatingDeclarationResponse, ErrorResponse>({
+      this.request<AgeRatingDeclarationResponse>({
         path: `/v1/appStoreVersions/${id}/ageRatingDeclaration`,
         method: "GET",
         query: query,
@@ -19284,7 +19265,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appStoreVersionsAppClipDefaultExperienceGetToOneRelationship: (id: string, params: RequestParams = {}) =>
-      this.request<AppStoreVersionAppClipDefaultExperienceLinkageResponse, ErrorResponse>({
+      this.request<AppStoreVersionAppClipDefaultExperienceLinkageResponse>({
         path: `/v1/appStoreVersions/${id}/relationships/appClipDefaultExperience`,
         method: "GET",
         secure: true,
@@ -19305,7 +19286,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppStoreVersionAppClipDefaultExperienceLinkageRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appStoreVersions/${id}/relationships/appClipDefaultExperience`,
         method: "PATCH",
         body: data,
@@ -19372,7 +19353,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppClipDefaultExperienceResponse, ErrorResponse>({
+      this.request<AppClipDefaultExperienceResponse>({
         path: `/v1/appStoreVersions/${id}/appClipDefaultExperience`,
         method: "GET",
         query: query,
@@ -19439,7 +19420,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreReviewDetailResponse, ErrorResponse>({
+      this.request<AppStoreReviewDetailResponse>({
         path: `/v1/appStoreVersions/${id}/appStoreReviewDetail`,
         method: "GET",
         query: query,
@@ -19516,7 +19497,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionExperimentsResponse, ErrorResponse>({
+      this.request<AppStoreVersionExperimentsResponse>({
         path: `/v1/appStoreVersions/${id}/appStoreVersionExperiments`,
         method: "GET",
         query: query,
@@ -19552,7 +19533,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionLocalizationsResponse, ErrorResponse>({
+      this.request<AppStoreVersionLocalizationsResponse>({
         path: `/v1/appStoreVersions/${id}/appStoreVersionLocalizations`,
         method: "GET",
         query: query,
@@ -19582,7 +19563,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionPhasedReleaseResponse, ErrorResponse>({
+      this.request<AppStoreVersionPhasedReleaseResponse>({
         path: `/v1/appStoreVersions/${id}/appStoreVersionPhasedRelease`,
         method: "GET",
         query: query,
@@ -19629,7 +19610,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionSubmissionResponse, ErrorResponse>({
+      this.request<AppStoreVersionSubmissionResponse>({
         path: `/v1/appStoreVersions/${id}/appStoreVersionSubmission`,
         method: "GET",
         query: query,
@@ -19647,7 +19628,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appStoreVersionsBuildGetToOneRelationship: (id: string, params: RequestParams = {}) =>
-      this.request<AppStoreVersionBuildLinkageResponse, ErrorResponse>({
+      this.request<AppStoreVersionBuildLinkageResponse>({
         path: `/v1/appStoreVersions/${id}/relationships/build`,
         method: "GET",
         secure: true,
@@ -19668,7 +19649,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppStoreVersionBuildLinkageRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/appStoreVersions/${id}/relationships/build`,
         method: "PATCH",
         body: data,
@@ -19717,7 +19698,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BuildResponse, ErrorResponse>({
+      this.request<BuildResponse>({
         path: `/v1/appStoreVersions/${id}/build`,
         method: "GET",
         query: query,
@@ -19989,7 +19970,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CustomerReviewsResponse, ErrorResponse>({
+      this.request<CustomerReviewsResponse>({
         path: `/v1/appStoreVersions/${id}/customerReviews`,
         method: "GET",
         query: query,
@@ -20021,7 +20002,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<RoutingAppCoverageResponse, ErrorResponse>({
+      this.request<RoutingAppCoverageResponse>({
         path: `/v1/appStoreVersions/${id}/routingAppCoverage`,
         method: "GET",
         query: query,
@@ -20097,7 +20078,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppClipsResponse, ErrorResponse>({
+      this.request<AppClipsResponse>({
         path: `/v1/apps/${id}/appClips`,
         method: "GET",
         query: query,
@@ -20179,7 +20160,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppCustomProductPagesResponse, ErrorResponse>({
+      this.request<AppCustomProductPagesResponse>({
         path: `/v1/apps/${id}/appCustomProductPages`,
         method: "GET",
         query: query,
@@ -20241,7 +20222,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppEventsResponse, ErrorResponse>({
+      this.request<AppEventsResponse>({
         path: `/v1/apps/${id}/appEvents`,
         method: "GET",
         query: query,
@@ -20361,7 +20342,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppInfosResponse, ErrorResponse>({
+      this.request<AppInfosResponse>({
         path: `/v1/apps/${id}/appInfos`,
         method: "GET",
         query: query,
@@ -20589,7 +20570,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionsResponse, ErrorResponse>({
+      this.request<AppStoreVersionsResponse>({
         path: `/v1/apps/${id}/appStoreVersions`,
         method: "GET",
         query: query,
@@ -20611,7 +20592,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[territories]"?: "currency"[]; limit?: number },
       params: RequestParams = {},
     ) =>
-      this.request<TerritoriesResponse, ErrorResponse>({
+      this.request<TerritoriesResponse>({
         path: `/v1/apps/${id}/availableTerritories`,
         method: "GET",
         query: query,
@@ -20644,7 +20625,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BetaAppLocalizationsResponse, ErrorResponse>({
+      this.request<BetaAppLocalizationsResponse>({
         path: `/v1/apps/${id}/betaAppLocalizations`,
         method: "GET",
         query: query,
@@ -20678,7 +20659,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BetaAppReviewDetailResponse, ErrorResponse>({
+      this.request<BetaAppReviewDetailResponse>({
         path: `/v1/apps/${id}/betaAppReviewDetail`,
         method: "GET",
         query: query,
@@ -20718,7 +20699,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BetaGroupsResponse, ErrorResponse>({
+      this.request<BetaGroupsResponse>({
         path: `/v1/apps/${id}/betaGroups`,
         method: "GET",
         query: query,
@@ -20740,7 +20721,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[betaLicenseAgreements]"?: ("agreementText" | "app")[] },
       params: RequestParams = {},
     ) =>
-      this.request<BetaLicenseAgreementResponse, ErrorResponse>({
+      this.request<BetaLicenseAgreementResponse>({
         path: `/v1/apps/${id}/betaLicenseAgreement`,
         method: "GET",
         query: query,
@@ -20762,7 +20743,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppBetaTestersLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/apps/${id}/relationships/betaTesters`,
         method: "DELETE",
         body: data,
@@ -20812,7 +20793,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BuildsResponse, ErrorResponse>({
+      this.request<BuildsResponse>({
         path: `/v1/apps/${id}/builds`,
         method: "GET",
         query: query,
@@ -20908,7 +20889,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CiProductResponse, ErrorResponse>({
+      this.request<CiProductResponse>({
         path: `/v1/apps/${id}/ciProduct`,
         method: "GET",
         query: query,
@@ -21180,7 +21161,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CustomerReviewsResponse, ErrorResponse>({
+      this.request<CustomerReviewsResponse>({
         path: `/v1/apps/${id}/customerReviews`,
         method: "GET",
         query: query,
@@ -21202,7 +21183,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[endUserLicenseAgreements]"?: ("agreementText" | "app" | "territories")[] },
       params: RequestParams = {},
     ) =>
-      this.request<EndUserLicenseAgreementResponse, ErrorResponse>({
+      this.request<EndUserLicenseAgreementResponse>({
         path: `/v1/apps/${id}/endUserLicenseAgreement`,
         method: "GET",
         query: query,
@@ -21279,7 +21260,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<GameCenterEnabledVersionsResponse, ErrorResponse>({
+      this.request<GameCenterEnabledVersionsResponse>({
         path: `/v1/apps/${id}/gameCenterEnabledVersions`,
         method: "GET",
         query: query,
@@ -21363,7 +21344,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<InAppPurchasesResponse, ErrorResponse>({
+      this.request<InAppPurchasesResponse>({
         path: `/v1/apps/${id}/inAppPurchases`,
         method: "GET",
         query: query,
@@ -21463,7 +21444,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<InAppPurchasesV2Response, ErrorResponse>({
+      this.request<InAppPurchasesV2Response>({
         path: `/v1/apps/${id}/inAppPurchasesV2`,
         method: "GET",
         query: query,
@@ -21489,7 +21470,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<XcodeMetrics, ErrorResponse>({
+      this.request<XcodeMetrics>({
         path: `/v1/apps/${id}/perfPowerMetrics`,
         method: "GET",
         query: query,
@@ -21511,7 +21492,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[appPreOrders]"?: ("app" | "appReleaseDate" | "preOrderAvailableDate")[] },
       params: RequestParams = {},
     ) =>
-      this.request<AppPreOrderResponse, ErrorResponse>({
+      this.request<AppPreOrderResponse>({
         path: `/v1/apps/${id}/preOrder`,
         method: "GET",
         query: query,
@@ -21533,7 +21514,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[preReleaseVersions]"?: ("app" | "builds" | "platform" | "version")[]; limit?: number },
       params: RequestParams = {},
     ) =>
-      this.request<PreReleaseVersionsResponse, ErrorResponse>({
+      this.request<PreReleaseVersionsResponse>({
         path: `/v1/apps/${id}/preReleaseVersions`,
         method: "GET",
         query: query,
@@ -21603,7 +21584,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppPricePointsV2Response, ErrorResponse>({
+      this.request<AppPricePointsV2Response>({
         path: `/v1/apps/${id}/pricePoints`,
         method: "GET",
         query: query,
@@ -21670,7 +21651,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppPricesResponse, ErrorResponse>({
+      this.request<AppPricesResponse>({
         path: `/v1/apps/${id}/prices`,
         method: "GET",
         query: query,
@@ -21688,7 +21669,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     appsPromotedPurchasesGetToManyRelationship: (id: string, query?: { limit?: number }, params: RequestParams = {}) =>
-      this.request<AppPromotedPurchasesLinkagesResponse, ErrorResponse>({
+      this.request<AppPromotedPurchasesLinkagesResponse>({
         path: `/v1/apps/${id}/relationships/promotedPurchases`,
         method: "GET",
         query: query,
@@ -21710,7 +21691,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: AppPromotedPurchasesLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/apps/${id}/relationships/promotedPurchases`,
         method: "PATCH",
         body: data,
@@ -21793,7 +21774,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<PromotedPurchasesResponse, ErrorResponse>({
+      this.request<PromotedPurchasesResponse>({
         path: `/v1/apps/${id}/promotedPurchases`,
         method: "GET",
         query: query,
@@ -21910,7 +21891,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<ReviewSubmissionsResponse, ErrorResponse>({
+      this.request<ReviewSubmissionsResponse>({
         path: `/v1/apps/${id}/reviewSubmissions`,
         method: "GET",
         query: query,
@@ -21932,7 +21913,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[subscriptionGracePeriods]"?: ("app" | "optIn")[] },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionGracePeriodResponse, ErrorResponse>({
+      this.request<SubscriptionGracePeriodResponse>({
         path: `/v1/apps/${id}/subscriptionGracePeriod`,
         method: "GET",
         query: query,
@@ -22000,7 +21981,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionGroupsResponse, ErrorResponse>({
+      this.request<SubscriptionGroupsResponse>({
         path: `/v1/apps/${id}/subscriptionGroups`,
         method: "GET",
         query: query,
@@ -22063,7 +22044,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppResponse, ErrorResponse>({
+      this.request<AppResponse>({
         path: `/v1/betaAppLocalizations/${id}/app`,
         method: "GET",
         query: query,
@@ -22126,7 +22107,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppResponse, ErrorResponse>({
+      this.request<AppResponse>({
         path: `/v1/betaAppReviewDetails/${id}/app`,
         method: "GET",
         query: query,
@@ -22175,7 +22156,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BuildResponse, ErrorResponse>({
+      this.request<BuildResponse>({
         path: `/v1/betaAppReviewSubmissions/${id}/build`,
         method: "GET",
         query: query,
@@ -22224,7 +22205,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BuildResponse, ErrorResponse>({
+      this.request<BuildResponse>({
         path: `/v1/betaBuildLocalizations/${id}/build`,
         method: "GET",
         query: query,
@@ -22287,7 +22268,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppResponse, ErrorResponse>({
+      this.request<AppResponse>({
         path: `/v1/betaGroups/${id}/app`,
         method: "GET",
         query: query,
@@ -22305,7 +22286,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     betaGroupsBetaTestersGetToManyRelationship: (id: string, query?: { limit?: number }, params: RequestParams = {}) =>
-      this.request<BetaGroupBetaTestersLinkagesResponse, ErrorResponse>({
+      this.request<BetaGroupBetaTestersLinkagesResponse>({
         path: `/v1/betaGroups/${id}/relationships/betaTesters`,
         method: "GET",
         query: query,
@@ -22327,7 +22308,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: BetaGroupBetaTestersLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/betaGroups/${id}/relationships/betaTesters`,
         method: "POST",
         body: data,
@@ -22349,7 +22330,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: BetaGroupBetaTestersLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/betaGroups/${id}/relationships/betaTesters`,
         method: "DELETE",
         body: data,
@@ -22382,7 +22363,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BetaTestersResponse, ErrorResponse>({
+      this.request<BetaTestersResponse>({
         path: `/v1/betaGroups/${id}/betaTesters`,
         method: "GET",
         query: query,
@@ -22400,7 +22381,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     betaGroupsBuildsGetToManyRelationship: (id: string, query?: { limit?: number }, params: RequestParams = {}) =>
-      this.request<BetaGroupBuildsLinkagesResponse, ErrorResponse>({
+      this.request<BetaGroupBuildsLinkagesResponse>({
         path: `/v1/betaGroups/${id}/relationships/builds`,
         method: "GET",
         query: query,
@@ -22422,7 +22403,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: BetaGroupBuildsLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/betaGroups/${id}/relationships/builds`,
         method: "POST",
         body: data,
@@ -22444,7 +22425,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: BetaGroupBuildsLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/betaGroups/${id}/relationships/builds`,
         method: "DELETE",
         body: data,
@@ -22494,7 +22475,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BuildsResponse, ErrorResponse>({
+      this.request<BuildsResponse>({
         path: `/v1/betaGroups/${id}/builds`,
         method: "GET",
         query: query,
@@ -22557,7 +22538,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppResponse, ErrorResponse>({
+      this.request<AppResponse>({
         path: `/v1/betaLicenseAgreements/${id}/app`,
         method: "GET",
         query: query,
@@ -22575,7 +22556,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     betaTestersAppsGetToManyRelationship: (id: string, query?: { limit?: number }, params: RequestParams = {}) =>
-      this.request<BetaTesterAppsLinkagesResponse, ErrorResponse>({
+      this.request<BetaTesterAppsLinkagesResponse>({
         path: `/v1/betaTesters/${id}/relationships/apps`,
         method: "GET",
         query: query,
@@ -22597,7 +22578,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: BetaTesterAppsLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/betaTesters/${id}/relationships/apps`,
         method: "DELETE",
         body: data,
@@ -22661,7 +22642,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppsResponse, ErrorResponse>({
+      this.request<AppsResponse>({
         path: `/v1/betaTesters/${id}/apps`,
         method: "GET",
         query: query,
@@ -22679,7 +22660,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     betaTestersBetaGroupsGetToManyRelationship: (id: string, query?: { limit?: number }, params: RequestParams = {}) =>
-      this.request<BetaTesterBetaGroupsLinkagesResponse, ErrorResponse>({
+      this.request<BetaTesterBetaGroupsLinkagesResponse>({
         path: `/v1/betaTesters/${id}/relationships/betaGroups`,
         method: "GET",
         query: query,
@@ -22701,7 +22682,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: BetaTesterBetaGroupsLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/betaTesters/${id}/relationships/betaGroups`,
         method: "POST",
         body: data,
@@ -22723,7 +22704,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: BetaTesterBetaGroupsLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/betaTesters/${id}/relationships/betaGroups`,
         method: "DELETE",
         body: data,
@@ -22763,7 +22744,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BetaGroupsResponse, ErrorResponse>({
+      this.request<BetaGroupsResponse>({
         path: `/v1/betaTesters/${id}/betaGroups`,
         method: "GET",
         query: query,
@@ -22781,7 +22762,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     betaTestersBuildsGetToManyRelationship: (id: string, query?: { limit?: number }, params: RequestParams = {}) =>
-      this.request<BetaTesterBuildsLinkagesResponse, ErrorResponse>({
+      this.request<BetaTesterBuildsLinkagesResponse>({
         path: `/v1/betaTesters/${id}/relationships/builds`,
         method: "GET",
         query: query,
@@ -22803,7 +22784,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: BetaTesterBuildsLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/betaTesters/${id}/relationships/builds`,
         method: "POST",
         body: data,
@@ -22825,7 +22806,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: BetaTesterBuildsLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/betaTesters/${id}/relationships/builds`,
         method: "DELETE",
         body: data,
@@ -22875,7 +22856,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BuildsResponse, ErrorResponse>({
+      this.request<BuildsResponse>({
         path: `/v1/betaTesters/${id}/builds`,
         method: "GET",
         query: query,
@@ -22924,7 +22905,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BuildResponse, ErrorResponse>({
+      this.request<BuildResponse>({
         path: `/v1/buildBetaDetails/${id}/build`,
         method: "GET",
         query: query,
@@ -22946,7 +22927,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[appClipDomainStatuses]"?: ("domains" | "lastUpdatedDate")[] },
       params: RequestParams = {},
     ) =>
-      this.request<AppClipDomainStatusResponse, ErrorResponse>({
+      this.request<AppClipDomainStatusResponse>({
         path: `/v1/buildBundles/${id}/appClipDomainCacheStatus`,
         method: "GET",
         query: query,
@@ -22968,7 +22949,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[appClipDomainStatuses]"?: ("domains" | "lastUpdatedDate")[] },
       params: RequestParams = {},
     ) =>
-      this.request<AppClipDomainStatusResponse, ErrorResponse>({
+      this.request<AppClipDomainStatusResponse>({
         path: `/v1/buildBundles/${id}/appClipDomainDebugStatus`,
         method: "GET",
         query: query,
@@ -22996,7 +22977,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BetaAppClipInvocationsResponse, ErrorResponse>({
+      this.request<BetaAppClipInvocationsResponse>({
         path: `/v1/buildBundles/${id}/betaAppClipInvocations`,
         method: "GET",
         query: query,
@@ -23021,7 +23002,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BuildBundleFileSizesResponse, ErrorResponse>({
+      this.request<BuildBundleFileSizesResponse>({
         path: `/v1/buildBundles/${id}/buildBundleFileSizes`,
         method: "GET",
         query: query,
@@ -23084,7 +23065,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppResponse, ErrorResponse>({
+      this.request<AppResponse>({
         path: `/v1/builds/${id}/app`,
         method: "GET",
         query: query,
@@ -23102,7 +23083,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     buildsAppEncryptionDeclarationGetToOneRelationship: (id: string, params: RequestParams = {}) =>
-      this.request<BuildAppEncryptionDeclarationLinkageResponse, ErrorResponse>({
+      this.request<BuildAppEncryptionDeclarationLinkageResponse>({
         path: `/v1/builds/${id}/relationships/appEncryptionDeclaration`,
         method: "GET",
         secure: true,
@@ -23123,7 +23104,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: BuildAppEncryptionDeclarationLinkageRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/builds/${id}/relationships/appEncryptionDeclaration`,
         method: "PATCH",
         body: data,
@@ -23162,7 +23143,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppEncryptionDeclarationResponse, ErrorResponse>({
+      this.request<AppEncryptionDeclarationResponse>({
         path: `/v1/builds/${id}/appEncryptionDeclaration`,
         method: "GET",
         query: query,
@@ -23365,7 +23346,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppStoreVersionResponse, ErrorResponse>({
+      this.request<AppStoreVersionResponse>({
         path: `/v1/builds/${id}/appStoreVersion`,
         method: "GET",
         query: query,
@@ -23387,7 +23368,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[betaAppReviewSubmissions]"?: ("betaReviewState" | "build" | "submittedDate")[] },
       params: RequestParams = {},
     ) =>
-      this.request<BetaAppReviewSubmissionResponse, ErrorResponse>({
+      this.request<BetaAppReviewSubmissionResponse>({
         path: `/v1/builds/${id}/betaAppReviewSubmission`,
         method: "GET",
         query: query,
@@ -23409,7 +23390,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[betaBuildLocalizations]"?: ("build" | "locale" | "whatsNew")[]; limit?: number },
       params: RequestParams = {},
     ) =>
-      this.request<BetaBuildLocalizationsResponse, ErrorResponse>({
+      this.request<BetaBuildLocalizationsResponse>({
         path: `/v1/builds/${id}/betaBuildLocalizations`,
         method: "GET",
         query: query,
@@ -23431,7 +23412,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: BuildBetaGroupsLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/builds/${id}/relationships/betaGroups`,
         method: "POST",
         body: data,
@@ -23453,7 +23434,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: BuildBetaGroupsLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/builds/${id}/relationships/betaGroups`,
         method: "DELETE",
         body: data,
@@ -23477,7 +23458,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BuildBetaDetailResponse, ErrorResponse>({
+      this.request<BuildBetaDetailResponse>({
         path: `/v1/builds/${id}/buildBetaDetail`,
         method: "GET",
         query: query,
@@ -23503,7 +23484,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<DiagnosticSignaturesResponse, ErrorResponse>({
+      this.request<DiagnosticSignaturesResponse>({
         path: `/v1/builds/${id}/diagnosticSignatures`,
         method: "GET",
         query: query,
@@ -23525,7 +23506,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[buildIcons]"?: ("iconAsset" | "iconType" | "name")[]; limit?: number },
       params: RequestParams = {},
     ) =>
-      this.request<BuildIconsResponse, ErrorResponse>({
+      this.request<BuildIconsResponse>({
         path: `/v1/builds/${id}/icons`,
         method: "GET",
         query: query,
@@ -23547,7 +23528,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { limit?: number },
       params: RequestParams = {},
     ) =>
-      this.request<BuildIndividualTestersLinkagesResponse, ErrorResponse>({
+      this.request<BuildIndividualTestersLinkagesResponse>({
         path: `/v1/builds/${id}/relationships/individualTesters`,
         method: "GET",
         query: query,
@@ -23569,7 +23550,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: BuildIndividualTestersLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/builds/${id}/relationships/individualTesters`,
         method: "POST",
         body: data,
@@ -23591,7 +23572,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: BuildIndividualTestersLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/builds/${id}/relationships/individualTesters`,
         method: "DELETE",
         body: data,
@@ -23624,7 +23605,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BetaTestersResponse, ErrorResponse>({
+      this.request<BetaTestersResponse>({
         path: `/v1/builds/${id}/individualTesters`,
         method: "GET",
         query: query,
@@ -23650,7 +23631,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<XcodeMetrics, ErrorResponse>({
+      this.request<XcodeMetrics>({
         path: `/v1/builds/${id}/perfPowerMetrics`,
         method: "GET",
         query: query,
@@ -23672,7 +23653,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[preReleaseVersions]"?: ("app" | "builds" | "platform" | "version")[] },
       params: RequestParams = {},
     ) =>
-      this.request<PrereleaseVersionResponse, ErrorResponse>({
+      this.request<PrereleaseVersionResponse>({
         path: `/v1/builds/${id}/preReleaseVersion`,
         method: "GET",
         query: query,
@@ -23735,7 +23716,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppResponse, ErrorResponse>({
+      this.request<AppResponse>({
         path: `/v1/bundleIds/${id}/app`,
         method: "GET",
         query: query,
@@ -23757,7 +23738,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[bundleIdCapabilities]"?: ("bundleId" | "capabilityType" | "settings")[]; limit?: number },
       params: RequestParams = {},
     ) =>
-      this.request<BundleIdCapabilitiesResponse, ErrorResponse>({
+      this.request<BundleIdCapabilitiesResponse>({
         path: `/v1/bundleIds/${id}/bundleIdCapabilities`,
         method: "GET",
         query: query,
@@ -23794,7 +23775,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<ProfilesResponse, ErrorResponse>({
+      this.request<ProfilesResponse>({
         path: `/v1/bundleIds/${id}/profiles`,
         method: "GET",
         query: query,
@@ -23816,7 +23797,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[ciArtifacts]"?: ("downloadUrl" | "fileName" | "fileSize" | "fileType")[]; limit?: number },
       params: RequestParams = {},
     ) =>
-      this.request<CiArtifactsResponse, ErrorResponse>({
+      this.request<CiArtifactsResponse>({
         path: `/v1/ciBuildActions/${id}/artifacts`,
         method: "GET",
         query: query,
@@ -23935,7 +23916,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CiBuildRunResponse, ErrorResponse>({
+      this.request<CiBuildRunResponse>({
         path: `/v1/ciBuildActions/${id}/buildRun`,
         method: "GET",
         query: query,
@@ -23957,7 +23938,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[ciIssues]"?: ("category" | "fileSource" | "issueType" | "message")[]; limit?: number },
       params: RequestParams = {},
     ) =>
-      this.request<CiIssuesResponse, ErrorResponse>({
+      this.request<CiIssuesResponse>({
         path: `/v1/ciBuildActions/${id}/issues`,
         method: "GET",
         query: query,
@@ -23989,7 +23970,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CiTestResultsResponse, ErrorResponse>({
+      this.request<CiTestResultsResponse>({
         path: `/v1/ciBuildActions/${id}/testResults`,
         method: "GET",
         query: query,
@@ -24051,7 +24032,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CiBuildActionsResponse, ErrorResponse>({
+      this.request<CiBuildActionsResponse>({
         path: `/v1/ciBuildRuns/${id}/actions`,
         method: "GET",
         query: query,
@@ -24275,7 +24256,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BuildsResponse, ErrorResponse>({
+      this.request<BuildsResponse>({
         path: `/v1/ciBuildRuns/${id}/builds`,
         method: "GET",
         query: query,
@@ -24303,7 +24284,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CiXcodeVersionsResponse, ErrorResponse>({
+      this.request<CiXcodeVersionsResponse>({
         path: `/v1/ciMacOsVersions/${id}/xcodeVersions`,
         method: "GET",
         query: query,
@@ -24342,7 +24323,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<ScmRepositoriesResponse, ErrorResponse>({
+      this.request<ScmRepositoriesResponse>({
         path: `/v1/ciProducts/${id}/additionalRepositories`,
         method: "GET",
         query: query,
@@ -24631,7 +24612,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppResponse, ErrorResponse>({
+      this.request<AppResponse>({
         path: `/v1/ciProducts/${id}/app`,
         method: "GET",
         query: query,
@@ -24752,7 +24733,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CiBuildRunsResponse, ErrorResponse>({
+      this.request<CiBuildRunsResponse>({
         path: `/v1/ciProducts/${id}/buildRuns`,
         method: "GET",
         query: query,
@@ -24791,7 +24772,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<ScmRepositoriesResponse, ErrorResponse>({
+      this.request<ScmRepositoriesResponse>({
         path: `/v1/ciProducts/${id}/primaryRepositories`,
         method: "GET",
         query: query,
@@ -24859,7 +24840,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CiWorkflowsResponse, ErrorResponse>({
+      this.request<CiWorkflowsResponse>({
         path: `/v1/ciProducts/${id}/workflows`,
         method: "GET",
         query: query,
@@ -24980,7 +24961,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CiBuildRunsResponse, ErrorResponse>({
+      this.request<CiBuildRunsResponse>({
         path: `/v1/ciWorkflows/${id}/buildRuns`,
         method: "GET",
         query: query,
@@ -25017,7 +24998,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<ScmRepositoryResponse, ErrorResponse>({
+      this.request<ScmRepositoryResponse>({
         path: `/v1/ciWorkflows/${id}/repository`,
         method: "GET",
         query: query,
@@ -25045,7 +25026,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CiMacOsVersionsResponse, ErrorResponse>({
+      this.request<CiMacOsVersionsResponse>({
         path: `/v1/ciXcodeVersions/${id}/macOsVersions`,
         method: "GET",
         query: query,
@@ -25079,7 +25060,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CustomerReviewResponseV1Response, ErrorResponse>({
+      this.request<CustomerReviewResponseV1Response>({
         path: `/v1/customerReviews/${id}/response`,
         method: "GET",
         query: query,
@@ -25097,7 +25078,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     diagnosticSignaturesLogsGetToManyRelated: (id: string, query?: { limit?: number }, params: RequestParams = {}) =>
-      this.request<DiagnosticLogs, ErrorResponse>({
+      this.request<DiagnosticLogs>({
         path: `/v1/diagnosticSignatures/${id}/logs`,
         method: "GET",
         query: query,
@@ -25119,7 +25100,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { "fields[territories]"?: "currency"[]; limit?: number },
       params: RequestParams = {},
     ) =>
-      this.request<TerritoriesResponse, ErrorResponse>({
+      this.request<TerritoriesResponse>({
         path: `/v1/endUserLicenseAgreements/${id}/territories`,
         method: "GET",
         query: query,
@@ -25141,7 +25122,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { limit?: number },
       params: RequestParams = {},
     ) =>
-      this.request<GameCenterEnabledVersionCompatibleVersionsLinkagesResponse, ErrorResponse>({
+      this.request<GameCenterEnabledVersionCompatibleVersionsLinkagesResponse>({
         path: `/v1/gameCenterEnabledVersions/${id}/relationships/compatibleVersions`,
         method: "GET",
         query: query,
@@ -25163,7 +25144,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: GameCenterEnabledVersionCompatibleVersionsLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/gameCenterEnabledVersions/${id}/relationships/compatibleVersions`,
         method: "POST",
         body: data,
@@ -25185,7 +25166,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: GameCenterEnabledVersionCompatibleVersionsLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/gameCenterEnabledVersions/${id}/relationships/compatibleVersions`,
         method: "PATCH",
         body: data,
@@ -25207,7 +25188,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: GameCenterEnabledVersionCompatibleVersionsLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/gameCenterEnabledVersions/${id}/relationships/compatibleVersions`,
         method: "DELETE",
         body: data,
@@ -25285,7 +25266,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<GameCenterEnabledVersionsResponse, ErrorResponse>({
+      this.request<GameCenterEnabledVersionsResponse>({
         path: `/v1/gameCenterEnabledVersions/${id}/compatibleVersions`,
         method: "GET",
         query: query,
@@ -25320,7 +25301,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<InAppPurchasePricesResponse, ErrorResponse>({
+      this.request<InAppPurchasePricesResponse>({
         path: `/v1/inAppPurchasePriceSchedules/${id}/manualPrices`,
         method: "GET",
         query: query,
@@ -25383,7 +25364,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppResponse, ErrorResponse>({
+      this.request<AppResponse>({
         path: `/v1/preReleaseVersions/${id}/app`,
         method: "GET",
         query: query,
@@ -25433,7 +25414,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BuildsResponse, ErrorResponse>({
+      this.request<BuildsResponse>({
         path: `/v1/preReleaseVersions/${id}/builds`,
         method: "GET",
         query: query,
@@ -25465,7 +25446,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<BundleIdResponse, ErrorResponse>({
+      this.request<BundleIdResponse>({
         path: `/v1/profiles/${id}/bundleId`,
         method: "GET",
         query: query,
@@ -25499,7 +25480,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<CertificatesResponse, ErrorResponse>({
+      this.request<CertificatesResponse>({
         path: `/v1/profiles/${id}/certificates`,
         method: "GET",
         query: query,
@@ -25524,7 +25505,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<DevicesResponse, ErrorResponse>({
+      this.request<DevicesResponse>({
         path: `/v1/profiles/${id}/devices`,
         method: "GET",
         query: query,
@@ -25570,7 +25551,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<PromotedPurchaseImagesResponse, ErrorResponse>({
+      this.request<PromotedPurchaseImagesResponse>({
         path: `/v1/promotedPurchases/${id}/promotionImages`,
         method: "GET",
         query: query,
@@ -25657,7 +25638,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<ReviewSubmissionItemsResponse, ErrorResponse>({
+      this.request<ReviewSubmissionItemsResponse>({
         path: `/v1/reviewSubmissions/${id}/items`,
         method: "GET",
         query: query,
@@ -25696,7 +25677,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<ScmRepositoriesResponse, ErrorResponse>({
+      this.request<ScmRepositoriesResponse>({
         path: `/v1/scmProviders/${id}/repositories`,
         method: "GET",
         query: query,
@@ -25733,7 +25714,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<ScmGitReferencesResponse, ErrorResponse>({
+      this.request<ScmGitReferencesResponse>({
         path: `/v1/scmRepositories/${id}/gitReferences`,
         method: "GET",
         query: query,
@@ -25783,7 +25764,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<ScmPullRequestsResponse, ErrorResponse>({
+      this.request<ScmPullRequestsResponse>({
         path: `/v1/scmRepositories/${id}/pullRequests`,
         method: "GET",
         query: query,
@@ -25816,7 +25797,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionGroupLocalizationsResponse, ErrorResponse>({
+      this.request<SubscriptionGroupLocalizationsResponse>({
         path: `/v1/subscriptionGroups/${id}/subscriptionGroupLocalizations`,
         method: "GET",
         query: query,
@@ -25953,7 +25934,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionsResponse, ErrorResponse>({
+      this.request<SubscriptionsResponse>({
         path: `/v1/subscriptionGroups/${id}/subscriptions`,
         method: "GET",
         query: query,
@@ -25971,7 +25952,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     subscriptionOfferCodeOneTimeUseCodesValuesGetToOneRelated: (id: string, params: RequestParams = {}) =>
-      this.request<Csv, ErrorResponse>({
+      this.request<Csv>({
         path: `/v1/subscriptionOfferCodeOneTimeUseCodes/${id}/values`,
         method: "GET",
         secure: true,
@@ -26016,7 +25997,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionOfferCodeCustomCodesResponse, ErrorResponse>({
+      this.request<SubscriptionOfferCodeCustomCodesResponse>({
         path: `/v1/subscriptionOfferCodes/${id}/customCodes`,
         method: "GET",
         query: query,
@@ -26063,7 +26044,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionOfferCodeOneTimeUseCodesResponse, ErrorResponse>({
+      this.request<SubscriptionOfferCodeOneTimeUseCodesResponse>({
         path: `/v1/subscriptionOfferCodes/${id}/oneTimeUseCodes`,
         method: "GET",
         query: query,
@@ -26099,7 +26080,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionOfferCodePricesResponse, ErrorResponse>({
+      this.request<SubscriptionOfferCodePricesResponse>({
         path: `/v1/subscriptionOfferCodes/${id}/prices`,
         method: "GET",
         query: query,
@@ -26135,7 +26116,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionPricePointsResponse, ErrorResponse>({
+      this.request<SubscriptionPricePointsResponse>({
         path: `/v1/subscriptionPricePoints/${id}/equalizations`,
         method: "GET",
         query: query,
@@ -26171,7 +26152,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionPromotionalOfferPricesResponse, ErrorResponse>({
+      this.request<SubscriptionPromotionalOfferPricesResponse>({
         path: `/v1/subscriptionPromotionalOffers/${id}/prices`,
         method: "GET",
         query: query,
@@ -26226,7 +26207,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionAppStoreReviewScreenshotResponse, ErrorResponse>({
+      this.request<SubscriptionAppStoreReviewScreenshotResponse>({
         path: `/v1/subscriptions/${id}/appStoreReviewScreenshot`,
         method: "GET",
         query: query,
@@ -26248,7 +26229,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: { limit?: number },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionIntroductoryOffersLinkagesResponse, ErrorResponse>({
+      this.request<SubscriptionIntroductoryOffersLinkagesResponse>({
         path: `/v1/subscriptions/${id}/relationships/introductoryOffers`,
         method: "GET",
         query: query,
@@ -26270,7 +26251,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: SubscriptionIntroductoryOffersLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/subscriptions/${id}/relationships/introductoryOffers`,
         method: "DELETE",
         body: data,
@@ -26334,7 +26315,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionIntroductoryOffersResponse, ErrorResponse>({
+      this.request<SubscriptionIntroductoryOffersResponse>({
         path: `/v1/subscriptions/${id}/introductoryOffers`,
         method: "GET",
         query: query,
@@ -26413,7 +26394,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionOfferCodesResponse, ErrorResponse>({
+      this.request<SubscriptionOfferCodesResponse>({
         path: `/v1/subscriptions/${id}/offerCodes`,
         method: "GET",
         query: query,
@@ -26448,7 +26429,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionPricePointsResponse, ErrorResponse>({
+      this.request<SubscriptionPricePointsResponse>({
         path: `/v1/subscriptions/${id}/pricePoints`,
         method: "GET",
         query: query,
@@ -26466,7 +26447,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     subscriptionsPricesGetToManyRelationship: (id: string, query?: { limit?: number }, params: RequestParams = {}) =>
-      this.request<SubscriptionPricesLinkagesResponse, ErrorResponse>({
+      this.request<SubscriptionPricesLinkagesResponse>({
         path: `/v1/subscriptions/${id}/relationships/prices`,
         method: "GET",
         query: query,
@@ -26488,7 +26469,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: SubscriptionPricesLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/subscriptions/${id}/relationships/prices`,
         method: "DELETE",
         body: data,
@@ -26532,7 +26513,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionPricesResponse, ErrorResponse>({
+      this.request<SubscriptionPricesResponse>({
         path: `/v1/subscriptions/${id}/prices`,
         method: "GET",
         query: query,
@@ -26614,7 +26595,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<PromotedPurchaseResponse, ErrorResponse>({
+      this.request<PromotedPurchaseResponse>({
         path: `/v1/subscriptions/${id}/promotedPurchase`,
         method: "GET",
         query: query,
@@ -26670,7 +26651,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionPromotionalOffersResponse, ErrorResponse>({
+      this.request<SubscriptionPromotionalOffersResponse>({
         path: `/v1/subscriptions/${id}/promotionalOffers`,
         method: "GET",
         query: query,
@@ -26715,7 +26696,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<SubscriptionLocalizationsResponse, ErrorResponse>({
+      this.request<SubscriptionLocalizationsResponse>({
         path: `/v1/subscriptions/${id}/subscriptionLocalizations`,
         method: "GET",
         query: query,
@@ -26779,7 +26760,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppsResponse, ErrorResponse>({
+      this.request<AppsResponse>({
         path: `/v1/userInvitations/${id}/visibleApps`,
         method: "GET",
         query: query,
@@ -26797,7 +26778,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     usersVisibleAppsGetToManyRelationship: (id: string, query?: { limit?: number }, params: RequestParams = {}) =>
-      this.request<UserVisibleAppsLinkagesResponse, ErrorResponse>({
+      this.request<UserVisibleAppsLinkagesResponse>({
         path: `/v1/users/${id}/relationships/visibleApps`,
         method: "GET",
         query: query,
@@ -26819,7 +26800,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: UserVisibleAppsLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/users/${id}/relationships/visibleApps`,
         method: "POST",
         body: data,
@@ -26841,7 +26822,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: UserVisibleAppsLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/users/${id}/relationships/visibleApps`,
         method: "PATCH",
         body: data,
@@ -26863,7 +26844,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data: UserVisibleAppsLinkagesRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v1/users/${id}/relationships/visibleApps`,
         method: "DELETE",
         body: data,
@@ -26927,7 +26908,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<AppsResponse, ErrorResponse>({
+      this.request<AppsResponse>({
         path: `/v1/users/${id}/visibleApps`,
         method: "GET",
         query: query,
@@ -26946,7 +26927,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     inAppPurchasesCreateInstance: (data: InAppPurchaseV2CreateRequest, params: RequestParams = {}) =>
-      this.request<InAppPurchaseV2Response, ErrorResponse>({
+      this.request<InAppPurchaseV2Response>({
         path: `/v2/inAppPurchases`,
         method: "POST",
         body: data,
@@ -27028,7 +27009,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<InAppPurchaseV2Response, ErrorResponse>({
+      this.request<InAppPurchaseV2Response>({
         path: `/v2/inAppPurchases/${id}`,
         method: "GET",
         query: query,
@@ -27046,7 +27027,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     inAppPurchasesUpdateInstance: (id: string, data: InAppPurchaseV2UpdateRequest, params: RequestParams = {}) =>
-      this.request<InAppPurchaseV2Response, ErrorResponse>({
+      this.request<InAppPurchaseV2Response>({
         path: `/v2/inAppPurchases/${id}`,
         method: "PATCH",
         body: data,
@@ -27065,7 +27046,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     inAppPurchasesDeleteInstance: (id: string, params: RequestParams = {}) =>
-      this.request<void, ErrorResponse>({
+      this.request<void>({
         path: `/v2/inAppPurchases/${id}`,
         method: "DELETE",
         secure: true,
@@ -27116,7 +27097,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<InAppPurchaseAppStoreReviewScreenshotResponse, ErrorResponse>({
+      this.request<InAppPurchaseAppStoreReviewScreenshotResponse>({
         path: `/v2/inAppPurchases/${id}/appStoreReviewScreenshot`,
         method: "GET",
         query: query,
@@ -27158,7 +27139,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<InAppPurchaseContentResponse, ErrorResponse>({
+      this.request<InAppPurchaseContentResponse>({
         path: `/v2/inAppPurchases/${id}/content`,
         method: "GET",
         query: query,
@@ -27202,7 +27183,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<InAppPurchasePriceScheduleResponse, ErrorResponse>({
+      this.request<InAppPurchasePriceScheduleResponse>({
         path: `/v2/inAppPurchases/${id}/iapPriceSchedule`,
         method: "GET",
         query: query,
@@ -27245,7 +27226,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<InAppPurchaseLocalizationsResponse, ErrorResponse>({
+      this.request<InAppPurchaseLocalizationsResponse>({
         path: `/v2/inAppPurchases/${id}/inAppPurchaseLocalizations`,
         method: "GET",
         query: query,
@@ -27280,7 +27261,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<InAppPurchasePricePointsResponse, ErrorResponse>({
+      this.request<InAppPurchasePricePointsResponse>({
         path: `/v2/inAppPurchases/${id}/pricePoints`,
         method: "GET",
         query: query,
@@ -27362,7 +27343,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<PromotedPurchaseResponse, ErrorResponse>({
+      this.request<PromotedPurchaseResponse>({
         path: `/v2/inAppPurchases/${id}/promotedPurchase`,
         method: "GET",
         query: query,
