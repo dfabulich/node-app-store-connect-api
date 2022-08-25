@@ -5,6 +5,7 @@
   "main": "index.mjs",
   "scripts": {
     "generate": "npx swagger-typescript-api --path ./app_store_connect_api_2.0_openapi.json --output . --name GeneratedApi.ts",
+    "start": "npx tsc && node test.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Dan Fabulich <dan@fabulich.com>",
