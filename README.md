@@ -355,6 +355,68 @@ const inAppPurchase = await create({
   version: 2
 });
 ```
+
+### Setting an IAP's price
+
+First, you'll have to determine the price tier ID you want.
+
+Each price tier ID is a number; most of them are equal to the rounded price in US dollars. The free price tier is `0`. The $5.99 price tier is `6`, the $6.99 price tier is `7`, the $7.99 price tier is `8`, and so on.
+
+But there are also a handful of "alternate price tiers" for low-priced tiers. As of Jan 2023, the alternate price tiers are:
+
+* Alternate Tier 1: 550
+* Alternate Tier 2: 560
+* Alternate Tier 3: 570
+* Alternate Tier 4: 580
+* Alternate Tier 5: 590
+* Alternate Tier A: 510
+* Alternate Tier B: 530
+
+If you want to use another price tier, you might have to query for the price tier ID.
+
+To get a list of all possible price tiers with their prices in a single territory, you do it like this:
+
+const {data: pricePoints} =
+  await readAll(`inAppPurchases/${inAppPurchase.id}/pricePoints?filter[territory]=USA`,
+    {version: 2}
+  );
+
+Each price point has a `customerPrice`, e.g. `4.99`, and a `priceTier`, e.g. `5`.
+
+Once you know which tier ID you want, you can query for the desired price point by price tier ID, and create an entry on the price schedule like this:
+
+```
+const priceTier = 5;
+const {data: [inAppPurchasePricePoint]} = await read(
+  `inAppPurchases/${inAppPurchase.id}/pricePoints?filter[priceTier]=${priceTier}&filter[territory]=USA&limit=1`,
+  {version: 2}
+);
+
+await create({
+  type: 'inAppPurchasePriceSchedules',
+  relationships: {
+    inAppPurchase,
+    manualPrices: [{
+      type: "inAppPurchasePrices",
+      id: "${price1}"
+    }]
+  },
+  included: [{
+    type: "inAppPurchasePrices",
+    id: "${price1}",
+    attributes: {
+      startDate: null,
+    },
+    relationships: {
+      inAppPurchaseV2: inAppPurchase,
+      inAppPurchasePricePoint
+    }
+  }]
+});
+```
+
+Note the use of an `included` array in the call to `create()`. We're defining a relationship to a new `inAppPurchasePrices` object that we're creating in the `included` array. The `id` string `"${price1}"` isn't a backtick JavaScript template string; we're literally passing the string "`${price1}`" to Apple, including the dollar sign and the brackets. By using the same `id` string in the initial `relationships` object and in the `included` array, Apple understands that we're creating an object and using it immediately as a relationship.
+
 ## Raw Requests and Responses
 
 If you want access to the data exactly as App Store Connect provided it, circumventing all of our "helpful" conveniences, (like transforming the `included` results,) the API provides a raw `fetch` function. The `fetch` function follows the rules of the standard `fetch` API, but we automatically add the `Authorization` header, and prepend `https://api.appstoreconnect.apple.com/v1` on relative URLs.
