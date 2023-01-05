@@ -322,7 +322,7 @@ const { data: inAppPurchasePrices, included: { inAppPurchasePricePoint } } =
   await readAll(`inAppPurchasePriceSchedules/${inAppPurchase.id}/manualPrices?include=inAppPurchasePricePoint&filter[territory]=USA`);
 ```
 
-That's supposed to return one price object per entry on the price schedule. Usually (but not always!) there's an additional one with `startDate: null`. According to Apple, that's supposed to be the current live price, but in my experience, it's often missing, and, in many cases, the price object with `startDate: null` often isn't the actual current live price. But, worst of all, sometimes it _only_ returns a price object with `startDate: null`, so you _must_ use it in that case.
+That's supposed to return one price object per entry on the price schedule. The one with `startDate: null` represents the current live price.
 
 So, if you want the current latest price for an IAP, you'd do it like this:
 
@@ -331,17 +331,7 @@ async function readPriceForIosIap(iap) {
     const { data: inAppPurchasePrices, included: { inAppPurchasePricePoints} } = await readAll(
         `inAppPurchasePriceSchedules/${iap.id}/manualPrices?include=inAppPurchasePricePoint&filter[territory]=USA`);
 
-    let [currentPriceObject] = inAppPurchasePrices.filter(
-        price => price.attributes.startDate
-            && new Date(price.attributes.startDate).getTime() < Date.now()
-    ).sort((a, b) => b.attributes.startDate.localeCompare(a.attributes.startDate));
-
-    if (!currentPriceObject) {
-        [currentPriceObject] = inAppPurchasePrices.filter(price => price.attributes.startDate === null);
-        if (!currentPriceObject) {
-            throw new Error(`Couldn't find a valid price for IAP ${iap.id} ${iap.attributes.productId} ${JSON.stringify(inAppPurchasePrices, null, 2)}`);
-        }
-    }
+    const [currentPriceObject] = inAppPurchasePrices.filter(price => price.attributes.startDate === null);
 
     const currentPricePoint = inAppPurchasePricePoints[
         currentPriceObject.relationships.inAppPurchasePricePoint.data.id
