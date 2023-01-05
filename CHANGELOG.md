@@ -7,3 +7,8 @@ v3:
 
 v4:
 * Added support for `read()` and `readAll()`, a clearer API than `fetchJson` and its `options` object
+
+v4.1:
+* Fixed array relationships
+* Add support for `included` array in `create()` and `update()`
+* Add documentation for setting IAP prices
