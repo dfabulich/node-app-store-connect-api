@@ -169,16 +169,30 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
         return output;
     }
 
-    async function create({type, attributes, relationships, version}) {
+    async function create({ type, attributes, relationships, included, version }) {
         const data = { type, attributes };
         if (relationships) data.relationships = _trimRelationships(relationships);
-        return postJson(type, {data}, {version});
+        if (included) {
+            for (const inclusion of included) {
+                if (inclusion.relationships) inclusion.relationships = _trimRelationships(inclusion.relationships);
+            }
+        }
+        const body = { data };
+        if (included) body.included = included;
+        return postJson(type, body, { version });
     }
 
-    async function update(data, {attributes, relationships, version}) {
+    async function update(data, {attributes, relationships, included, version}) {
         const requestData = { type: data.type, id: data.id, attributes };
         if (relationships) requestData.relationships = _trimRelationships(relationships);
-        return postJson(`${data.type}/${data.id}`, { data: requestData }, {version, method: 'PATCH'});
+        if (included) {
+            for (const inclusion of included) {
+                if (inclusion.relationships) inclusion.relationships = _trimRelationships(inclusion.relationships);
+            }
+        }
+        const body = { data: requestData };
+        if (included) body.included = included;
+        return postJson(`${data.type}/${data.id}`, body, {version, method: 'PATCH'});
     }
 
     async function remove(data, {version}) {
