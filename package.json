@@ -9,11 +9,15 @@
   "author": "Dan Fabulich <dan@fabulich.com>",
   "license": "ISC",
   "dependencies": {
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "md5": "^2.3.0",
     "node-fetch": "^3.0.0"
   },
-  "keywords": ["apple", "app store", "appstore"],
+  "keywords": [
+    "apple",
+    "app store",
+    "appstore"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/dfabulich/node-app-store-connect-api"
