@@ -292,10 +292,133 @@ await pollForUploadSuccess(appScreenshot.links.self);
 
 **That's a lot of work.** Check out the working samples in the [`samples`](https://github.com/dfabulich/node-app-store-connect-api/tree/main/samples) directory of this repository.
 
+## Managing App Prices
+
+Apple manages prices in "tiers." 
+
+Each price tier ID is a number; most of them are equal to the rounded price in US dollars. The free price tier is `0`. The $5.99 price tier is `6`, the $6.99 price tier is `7`, the $7.99 price tier is `8`, and so on.
+
+But there are also a handful of "alternate price tiers" for low-priced tiers. As of Jan 2023, the alternate price tiers are:
+
+* Alternate Tier 1: 550
+* Alternate Tier 2: 560
+* Alternate Tier 3: 570
+* Alternate Tier 4: 580
+* Alternate Tier 5: 590
+* Alternate Tier A: 510
+* Alternate Tier B: 530
+
+### Get current app price
+
+Get the current price tier for your app like this:
+
+```
+async function getPriceTierForApp(appId) {
+  const { data: [appPrice] } = await readAll(`apps/${appId}/prices?include=priceTier`);
+  const tier = appPrice.relationships.priceTier.data.id;
+  return tier;
+}
+```
+
+(As of Jan 2023, the `apps/${appId}/prices` endpoint doesn't include a `startDate`. I think this is a bug on Apple's end.)
+
+Note that `appPrices` objects are related to `appPriceTiers` objects, but the price tiers are _hidden_ unless you explicitly `include=priceTier`.
+
+If you need to get the price in an actual currency, you can do it like this. (Consider aggressively caching the `priceTiersInDollars` object, or even hardcoding it. It doesn't appear to vary from app to app.)
+
+```
+async function getAllPriceTiersInDollars(appId) {
+    const { data: appPricePoints } = await readAll(`apps/${appId}/pricePoints?include=priceTier&filter[territory]=USA&limit=200`);
+    const priceTiersInDollars = {};
+    for (const appPricePoint of appPricePoints) {
+        const tier = appPricePoint.relationships.priceTier.data.id;
+        priceTiersInDollars[tier] = appPricePoint.attributes.customerPrice;
+    }
+    return priceTiersInDollars;
+}
+
+const priceTiersInDollars = await getAllPriceTiersInDollars(appId);
+console.log(priceTiersInDollars[await getPriceTierForApp(appId)]);
+```
+
+### Set your app's price schedule
+
+Let's say you'd like to set a price schedule for your app, where the current price will be price tier 6 ($5.99) and on January 31, 2050, the price tier will change to be price tier 7 ($6.99).
+
+You can write that code like this:
+
+```
+await update({ type: 'apps', id: appId }, {
+  relationships: {
+      prices: [
+        { type: "appPrices", id: "${price0}" },
+        { type: "appPrices", id: "${price1}" }
+      ]
+  },
+  included: [
+    {
+      type: "appPrices",
+      id: "${price0}",
+      attributes: { startDate: null },
+      relationships: {
+          priceTier: {
+              type: "appPriceTiers",
+              id: "5"
+          }
+      }
+    },
+    {
+      type: "appPrices",
+      id: "${price1}",
+      attributes: { startDate: '2050-01-31' },
+      relationships: {
+          priceTier: {
+              type: "appPriceTiers",
+              id: "6"
+          }
+      }
+    },
+  ]
+});
+```
+
+Note the use of an `included` array in the call to `update()`. We're defining a relationship to new `appPrices` objects that we're creating in the `included` array. In the `id` strings, e.g. `"${price1}"` we're literally passing the string "`${price1}`" to Apple, including the dollar sign and the brackets. By using the same `id` string in the initial `relationships` object and in the `included` array, Apple understands that we're creating an object and using it immediately as a relationship.
+
+Also note that you must set the entire price schedule at once; you can't append an upcoming price change to start after the current price. And, therefore, at least one of the prices that you set must have `startDate: null`.
+
+You might prefer to use this convenience function, which does the same thing:
+
+```
+async function setPricesForApp(appId, newPrices) {
+    await update({ type: 'apps', id: appId }, {
+        relationships: {
+            prices: newPrices.map((price, i) => 
+                ({ type: "appPrices", id: `\${price${i}}` })
+            )
+        },
+        included: newPrices.map((price, i) => ({
+            type: "appPrices",
+            id: `\${price${i}}`,
+            attributes: { startDate: price.startDate ?? null },
+            relationships: {
+                priceTier: {
+                    type: "appPriceTiers",
+                    id: String(price.tier)
+                }
+            }
+        })),
+    });
+}
+
+await setPricesForApp(appId, [
+    {tier: 5},
+    {tier: 6, startDate: '2050-01-31'},
+]);
+```
 
 ## Working with In-App Purchases
 
-In-app purchases are _really_ tough to work with. They sometimes (but not always) require using `/v2` URLs, and the way they store prices is quite confusing.
+In-app purchases are _really_ tough to work with. They sometimes (but not always) require using `/v2` URLs, and the way they manage prices is quite confusing, and different from the way apps manage prices. Worst of all, there's no sample code in the WWDC video!
 
 Query for all IAPs for your app like this:
 
@@ -311,10 +434,13 @@ And each "manual price" `inAppPurchasePrices` object has its own territory (ther
 
 ```js
 const { data: [inAppPurchase] } = await read(`apps/${app.id}/inAppPurchasesV2`);
-const { data: inAppPurchasePrices, included: { inAppPurchasePricePoint, territory } } = await readAll(`inAppPurchasePriceSchedules/${inAppPurchase.id}/manualPrices?include=inAppPurchasePricePoint,territory`)
+const { data: inAppPurchasePrices, included: { inAppPurchasePricePoint, territory } } =
+    await readAll(`inAppPurchasePriceSchedules/${inAppPurchase.id}/manualPrices?include=inAppPurchasePricePoint,territory`)
 ```
 
-But it's very unlikely that you actually want to explore all manual prices for a given IAP; you probably just want price tiers. The easiest way to do that is to filter to a single territory (e.g. `USA`).
+But it's very unlikely that you actually want to explore all manual prices for a given IAP; you probably just want price tiers. (See "Managing App Prices" above for more information about price tiers.)
+
+The easiest way to get the price tiers for your IAP is to filter to a single territory (e.g. `USA`).
 
 ```js
 const { data: [inAppPurchase] } = await read(`apps/${app.id}/inAppPurchasesV2`);
@@ -327,11 +453,11 @@ That's supposed to return one price object per entry on the price schedule. The 
 So, if you want the current latest price for an IAP, you'd do it like this:
 
 ```js
-async function readPriceForIosIap(iap) {
+async function readPriceForIap(iap) {
     const { data: inAppPurchasePrices, included: { inAppPurchasePricePoints} } = await readAll(
         `inAppPurchasePriceSchedules/${iap.id}/manualPrices?include=inAppPurchasePricePoint&filter[territory]=USA`);
 
-    const [currentPriceObject] = inAppPurchasePrices.filter(price => price.attributes.startDate === null);
+    const currentPriceObject = inAppPurchasePrices.find(price => price.attributes.startDate === null);
 
     const currentPricePoint = inAppPurchasePricePoints[
         currentPriceObject.relationships.inAppPurchasePricePoint.data.id
@@ -340,7 +466,7 @@ async function readPriceForIosIap(iap) {
     return currentPricePoint;
 }
 
-const { attributes: { priceTier, customerPrice } } = await readPriceForIosIap(iap);
+const { attributes: { priceTier, customerPrice } } = await readPriceForIap(iap);
 ```
 
 ### Creating an IAP
@@ -358,28 +484,16 @@ const inAppPurchase = await create({
 
 ### Setting an IAP's price
 
-First, you'll have to determine the price tier ID you want.
-
-Each price tier ID is a number; most of them are equal to the rounded price in US dollars. The free price tier is `0`. The $5.99 price tier is `6`, the $6.99 price tier is `7`, the $7.99 price tier is `8`, and so on.
-
-But there are also a handful of "alternate price tiers" for low-priced tiers. As of Jan 2023, the alternate price tiers are:
-
-* Alternate Tier 1: 550
-* Alternate Tier 2: 560
-* Alternate Tier 3: 570
-* Alternate Tier 4: 580
-* Alternate Tier 5: 590
-* Alternate Tier A: 510
-* Alternate Tier B: 530
-
-If you want to use another price tier, you might have to query for the price tier ID.
+First, you'll have to determine the price tier ID you want. (See "Manage App Prices" above for details about price tiers.)
 
 To get a list of all possible price tiers with their prices in a single territory, you do it like this:
 
+```
 const {data: pricePoints} =
-  await readAll(`inAppPurchases/${inAppPurchase.id}/pricePoints?filter[territory]=USA`,
+  await readAll(`inAppPurchases/${inAppPurchase.id}/pricePoints?filter[territory]=USA&limit=200`,
     {version: 2}
   );
+```
 
 Each price point has a `customerPrice`, e.g. `4.99`, and a `priceTier`, e.g. `5`.
 
@@ -416,6 +530,50 @@ await create({
 ```
 
 Note the use of an `included` array in the call to `create()`. We're defining a relationship to a new `inAppPurchasePrices` object that we're creating in the `included` array. The `id` string `"${price1}"` isn't a backtick JavaScript template string; we're literally passing the string "`${price1}`" to Apple, including the dollar sign and the brackets. By using the same `id` string in the initial `relationships` object and in the `included` array, Apple understands that we're creating an object and using it immediately as a relationship.
+
+Also note that you must set the entire price schedule at once; you can't append an upcoming price change to start after the current price. And, therefore, at least one of the prices that you set must have `startDate: null`.
+
+If you're setting a price schedule with multiple price changes, you might prefer to use this convenience function, which does the same thing:
+
+```
+async function setPricesForIap(inAppPurchase, newPrices) {
+  const {data: pricePoints} = await readAll(
+    `inAppPurchases/${inAppPurchase.id}/pricePoints?filter[territory]=USA&limit=200`,
+    {version: 2}
+  );
+  
+  const pricePointsByTierId = {};
+  for (const pricePoint of pricePoints) {
+    pricePointsByTierId[pricePoint.attributes.priceTier] = pricePoint;
+  }
+
+  await create({
+    type: 'inAppPurchasePriceSchedules',
+    relationships: {
+      inAppPurchase,
+      manualPrices: newPrices.map((price, i) => 
+        ({ type: "inAppPurchasePrices", id: `\${price${i}}` })
+      )
+    },
+    included: newPrices.map((price, i) => ({
+      type: "inAppPurchasePrices",
+      id: `\${price${i}}`,
+      attributes: {
+        startDate: price.startDate ?? null,
+      },
+      relationships: {
+        inAppPurchaseV2: inAppPurchase,
+        inAppPurchasePricePoint: pricePointsByTierId[price.tier];
+      }
+    }]
+  });
+}
+
+await setPricesForIap(inAppPurchase, [
+    {tier: 5},
+    {tier: 6, startDate: '2050-01-31'},
+]);
+```
 
 ## Raw Requests and Responses
 
