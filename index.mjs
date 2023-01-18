@@ -94,6 +94,27 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
         if (inclusions && inclusions !== true && inclusions !== 'tree') {
             throw new Error(`inclusions parameter '${inclusions}' must be either boolean true or a string 'tree'`);
         }
+        if (options.params) {
+            if (!/^https:\/\//.test(url)) {
+                // strip leading slash
+                url = url.replace(/^\//, "");
+                if (/^v\d+\//.test(url)) {
+                    // URL includes version number
+                    url = `${urlBase}/${url}`;
+                } else {
+                    // No version number; add our own
+                    const v = options.version ?? version;
+                    url = `${urlBase}/v${v}/${url}`;
+                }
+            }
+            const parsed = new URL(url);
+            const usp = new URLSearchParams(parsed.search);
+            for (const key in options.params) {
+                usp.set(key, options.params[key]);
+            }
+            parsed.search = usp.toString();
+            url = parsed.toString();
+        }
         const response = await authFetch(url, options);
         const text = await response.text();
         const contentType = response.headers.get('content-type');

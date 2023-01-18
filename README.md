@@ -175,6 +175,28 @@ for (const app of apps) {
 }
 ```
 
+## URL Parameters
+
+Sometimes, you'll find that you have a lot of URL parameters:
+
+```
+const { data: appPricePoints } = await readAll(`apps/${appId}/pricePoints?include=priceTier&filter[territory]=USA&limit=200`);
+```
+
+You can pass a `params` object to `read` and `readAll` instead of including parameters in the URL string.
+
+This code does the same thing, but is more readable:
+
+```js
+const { data: appPricePoints } = await readAll(`apps/${appId}/pricePoints`,
+  { params: {
+    include: "priceTier",
+    "filter[territory]": "USA",
+    limit: 200,
+  }}
+);
+```
+
 ## Creating, updating, and removing a new App Store version
 
 We create objects with the `create` function. It constructs a create request (a `POST`). It uses the "type" as the URL, and it allows you to pass in a data object as a relationship.
@@ -314,7 +336,8 @@ Get the current price tier for your app like this:
 
 ```
 async function getPriceTierForApp(appId) {
-  const { data: [appPrice] } = await readAll(`apps/${appId}/prices?include=priceTier`);
+  const { data: [appPrice] } =
+    await readAll(`apps/${appId}/prices?include=priceTier`);
   const tier = appPrice.relationships.priceTier.data.id;
   return tier;
 }
@@ -326,9 +349,15 @@ Note that `appPrices` objects are related to `appPriceTiers` objects, but the pr
 
 If you need to get the price in an actual currency, you can do it like this. (Consider aggressively caching the `priceTiersInDollars` object, or even hardcoding it. It doesn't appear to vary from app to app.)
 
-```
+```js
 async function getAllPriceTiersInDollars(appId) {
-    const { data: appPricePoints } = await readAll(`apps/${appId}/pricePoints?include=priceTier&filter[territory]=USA&limit=200`);
+    const { data: appPricePoints } = await readAll(`apps/${appId}/pricePoints`,
+      { params: { 
+        include: "priceTier",
+        "filter[territory]": "USA",
+        limit: 200,
+      }}
+    );
     const priceTiersInDollars = {};
     for (const appPricePoint of appPricePoints) {
         const tier = appPricePoint.relationships.priceTier.data.id;
@@ -435,7 +464,8 @@ And each "manual price" `inAppPurchasePrices` object has its own territory (ther
 ```js
 const { data: [inAppPurchase] } = await read(`apps/${app.id}/inAppPurchasesV2`);
 const { data: inAppPurchasePrices, included: { inAppPurchasePricePoint, territory } } =
-    await readAll(`inAppPurchasePriceSchedules/${inAppPurchase.id}/manualPrices?include=inAppPurchasePricePoint,territory`)
+    await readAll(`inAppPurchasePriceSchedules/${inAppPurchase.id}/manualPrices`,
+      { params: { include: "inAppPurchasePricePoint,territory" } } );
 ```
 
 But it's very unlikely that you actually want to explore all manual prices for a given IAP; you probably just want price tiers. (See "Managing App Prices" above for more information about price tiers.)
@@ -444,8 +474,13 @@ The easiest way to get the price tiers for your IAP is to filter to a single ter
 
 ```js
 const { data: [inAppPurchase] } = await read(`apps/${app.id}/inAppPurchasesV2`);
-const { data: inAppPurchasePrices, included: { inAppPurchasePricePoint } } =
-  await readAll(`inAppPurchasePriceSchedules/${inAppPurchase.id}/manualPrices?include=inAppPurchasePricePoint&filter[territory]=USA`);
+const { data: inAppPurchasePrices, included: { inAppPurchasePricePoints } } =
+  await readAll(`inAppPurchasePriceSchedules/${inAppPurchase.id}/manualPrices`,
+    { params: {
+      include: "inAppPurchasePricePoint",
+      "filter[territory]": "USA",
+    }}
+  );
 ```
 
 That's supposed to return one price object per entry on the price schedule. The one with `startDate: null` represents the current live price.
@@ -453,11 +488,18 @@ That's supposed to return one price object per entry on the price schedule. The 
 So, if you want the current latest price for an IAP, you'd do it like this:
 
 ```js
-async function readPriceForIap(iap) {
-    const { data: inAppPurchasePrices, included: { inAppPurchasePricePoints} } = await readAll(
-        `inAppPurchasePriceSchedules/${iap.id}/manualPrices?include=inAppPurchasePricePoint&filter[territory]=USA`);
+async function readPriceForIap(inAppPurchase) {
+    const { data: inAppPurchasePrices, included: { inAppPurchasePricePoints } } =
+      await readAll(`inAppPurchasePriceSchedules/${inAppPurchase.id}/manualPrices`,
+        { params: {
+          include: "inAppPurchasePricePoint",
+          "filter[territory]": "USA",
+        }}
+      );
 
-    const currentPriceObject = inAppPurchasePrices.find(price => price.attributes.startDate === null);
+    const currentPriceObject = inAppPurchasePrices.find(
+    	price => price.attributes.startDate === null
+    );
 
     const currentPricePoint = inAppPurchasePricePoints[
         currentPriceObject.relationships.inAppPurchasePricePoint.data.id
@@ -466,7 +508,8 @@ async function readPriceForIap(iap) {
     return currentPricePoint;
 }
 
-const { attributes: { priceTier, customerPrice } } = await readPriceForIap(iap);
+const { attributes: { priceTier, customerPrice } } =
+	await readPriceForIap(inAppPurchase);
 ```
 
 ### Creating an IAP
@@ -488,10 +531,13 @@ First, you'll have to determine the price tier ID you want. (See "Manage App Pri
 
 To get a list of all possible price tiers with their prices in a single territory, you do it like this:
 
-```
+```js
 const {data: pricePoints} =
-  await readAll(`inAppPurchases/${inAppPurchase.id}/pricePoints?filter[territory]=USA&limit=200`,
-    {version: 2}
+  await readAll(`inAppPurchases/${inAppPurchase.id}/pricePoints`,
+    { version: 2, params: {
+      "filter[territory]": "USA",
+      limit: 200,
+    }}
   );
 ```
 
@@ -499,11 +545,15 @@ Each price point has a `customerPrice`, e.g. `4.99`, and a `priceTier`, e.g. `5`
 
 Once you know which tier ID you want, you can query for the desired price point by price tier ID, and create an entry on the price schedule like this:
 
-```
+```js
 const priceTier = 5;
 const {data: [inAppPurchasePricePoint]} = await read(
-  `inAppPurchases/${inAppPurchase.id}/pricePoints?filter[priceTier]=${priceTier}&filter[territory]=USA&limit=1`,
-  {version: 2}
+  `inAppPurchases/${inAppPurchase.id}/pricePoints`,
+  {version: 2, params: {
+    "filter[priceTier]": priceTier,
+    "filter[territory]": "USA",
+    limit: 1,
+  }}
 );
 
 await create({
@@ -535,11 +585,14 @@ Also note that you must set the entire price schedule at once; you can't append 
 
 If you're setting a price schedule with multiple price changes, you might prefer to use this convenience function, which does the same thing:
 
-```
+```js
 async function setPricesForIap(inAppPurchase, newPrices) {
   const {data: pricePoints} = await readAll(
-    `inAppPurchases/${inAppPurchase.id}/pricePoints?filter[territory]=USA&limit=200`,
-    {version: 2}
+    `inAppPurchases/${inAppPurchase.id}/pricePoints`,
+    {version: 2, params: {
+      "filter[territory]"="USA",
+      limit: 200,
+    }}
   );
   
   const pricePointsByTierId = {};
