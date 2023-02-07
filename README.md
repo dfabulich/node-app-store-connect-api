@@ -376,7 +376,7 @@ Let's say you'd like to set a price schedule for your app, where the current pri
 
 You can write that code like this:
 
-```
+```js
 await update({ type: 'apps', id: appId }, {
   relationships: {
       prices: [
@@ -417,7 +417,7 @@ Also note that you must set the entire price schedule at once; you can't append 
 
 You might prefer to use this convenience function, which does the same thing:
 
-```
+```js
 async function setPricesForApp(appId, newPrices) {
     await update({ type: 'apps', id: appId }, {
         relationships: {
