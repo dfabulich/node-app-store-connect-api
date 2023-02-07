@@ -12,7 +12,18 @@ You'll have to start by [creating an API key](https://developer.apple.com/docume
 
 When you're done, you'll have an issuer ID (like `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`), an API key (like `XXXXXXXXXX`) and a private key file.
 
-**Keep your private keys private.** Store them securely, outside of your git repository. If you store your private key in `~/.appstoreconnect/private_keys/AuthKey_XXXXXXXXXX.p8` (where that `XXXXXXXXXX` is your API key), you don't have to pass us a `privateKey`; we'll autodetect your key from there.
+**Keep your private keys private.** Store them securely, outside of your git repository.
+
+A common location for the key is in your user's home directory, in `~/.appstoreconnect/private_keys/AuthKey_XXXXXXXXXX.p8` (where that `XXXXXXXXXX` is your API key). You can load the private key from there like this:
+
+```js
+async function loadPrivateKey(apiKey) {
+  const fs = await import('node:fs/promises');
+  const { homedir } = await import ('node:os');
+  const privateKey = await fs.readFile(`${homedir()}/.appstoreconnect/private_keys/AuthKey_${apiKey}.p8`, 'utf8');
+  return privateKey;
+}
+```
 
 # Usage
 

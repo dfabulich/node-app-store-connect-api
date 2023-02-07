@@ -1,7 +1,5 @@
 import { SignJWT, importPKCS8 } from 'jose';
 import md5 from 'md5';
-import fs from 'fs/promises';
-import { homedir } from 'os';
 import fetch from 'node-fetch';
 
 // issuerId and apiKey from https://appstoreconnect.apple.com/access/api
@@ -9,7 +7,7 @@ import fetch from 'node-fetch';
 export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, privateKey, version = 1, urlBase,
     tokenExpiresInSeconds = 1200, automaticRetries = 10, logRequests = false
 } = {}) {
-    if (!privateKey) privateKey = await fs.readFile(`${homedir()}/.appstoreconnect/private_keys/AuthKey_${apiKey}.p8`, 'utf8');
+    if (!privateKey) throw new Error("You must pass a privateKey parameter");
     if (!urlBase) urlBase = `https://api.appstoreconnect.apple.com`;
 
     async function _getBearerToken(issuerId, apiKey, privateKey) {
