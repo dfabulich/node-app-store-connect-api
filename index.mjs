@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import { SignJWT, importPKCS8 } from 'jose';
 import md5 from 'md5';
 import fs from 'fs/promises';
 import { homedir } from 'os';
@@ -9,37 +9,23 @@ import fetch from 'node-fetch';
 export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, privateKey, version = 1, urlBase,
     tokenExpiresInSeconds = 1200, automaticRetries = 10, logRequests = false
 } = {}) {
-    if (!privateKey) privateKey = await fs.readFile(`${homedir()}/.appstoreconnect/private_keys/AuthKey_${apiKey}.p8`);
+    if (!privateKey) privateKey = await fs.readFile(`${homedir()}/.appstoreconnect/private_keys/AuthKey_${apiKey}.p8`, 'utf8');
     if (!urlBase) urlBase = `https://api.appstoreconnect.apple.com`;
 
-    function _getBearerToken(issuerId, apiKey, privateKey) {
-        const NOW = Math.round((new Date()).getTime() / 1000);
-
-        const PAYLOAD = {
-            'iss': issuerId,
-            'exp': NOW + tokenExpiresInSeconds,
-            'aud': 'appstoreconnect-v1'
-        };
-
-        const SIGN_OPTS = {
-            'algorithm': 'ES256',
-            'header': {
-                'alg': 'ES256',
-                'kid': apiKey,
-                'typ': 'JWT'
-            }
-        };
-
-        const bearerToken = jwt.sign(
-            PAYLOAD,
-            privateKey,
-            SIGN_OPTS
-        );
-
-        return bearerToken;
+    async function _getBearerToken(issuerId, apiKey, privateKey) {
+        const alg = 'ES256';
+        const secret = await importPKCS8(privateKey, alg);
+        const jwt = await new SignJWT({})
+            .setProtectedHeader({ alg, kid: apiKey, typ: 'JWT' })
+            .setIssuedAt()
+            .setIssuer(issuerId)
+            .setAudience('appstoreconnect-v1')
+            .setExpirationTime('20m')
+            .sign(secret)
+        return jwt;
     }
 
-    const bearerToken = _getBearerToken(issuerId, apiKey, privateKey);
+    const bearerToken = await _getBearerToken(issuerId, apiKey, privateKey);
 
     const authFetch = async function authFetch(url, options) {
         if (!options) options = {};

@@ -9,7 +9,7 @@
   "author": "Dan Fabulich <dan@fabulich.com>",
   "license": "ISC",
   "dependencies": {
-    "jsonwebtoken": "^9.0.0",
+    "jose": "^4.11.2",
     "md5": "^2.3.0",
     "node-fetch": "^3.0.0"
   },
