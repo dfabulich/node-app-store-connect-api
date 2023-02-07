@@ -1,6 +1,5 @@
 import { SignJWT, importPKCS8 } from 'jose';
 import md5 from 'md5';
-import fetch from 'node-fetch';
 
 // issuerId and apiKey from https://appstoreconnect.apple.com/access/api
 // p8 file was generated initially, and somebody stored it in ~/.appstoreconnect/private_keys (iTMSTransporter?)

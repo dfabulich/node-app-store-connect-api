@@ -10,8 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "jose": "^4.11.2",
-    "md5": "^2.3.0",
-    "node-fetch": "^3.0.0"
+    "md5": "^2.3.0"
   },
   "keywords": [
     "apple",
@@ -21,5 +20,8 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/dfabulich/node-app-store-connect-api"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

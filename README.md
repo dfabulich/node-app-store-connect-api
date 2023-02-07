@@ -4,7 +4,7 @@ A library to support [Apple's App Store Connect API](https://developer.apple.com
 
 See the [WWDC video introducing the API](https://developer.apple.com/videos/play/wwdc2020/10004/).
 
-Requires Node 16+. (This package uses ES Modules.)
+Requires Node 18+. (This package uses ES Modules.)
 
 # API Keys Required
 
