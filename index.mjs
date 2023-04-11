@@ -77,7 +77,7 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
         if (inclusions && inclusions !== true && inclusions !== 'tree') {
             throw new Error(`inclusions parameter '${inclusions}' must be either boolean true or a string 'tree'`);
         }
-        if (options.params) {
+        if (options?.params) {
             if (!/^https:\/\//.test(url)) {
                 // strip leading slash
                 url = url.replace(/^\//, "");
