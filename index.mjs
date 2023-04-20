@@ -49,7 +49,7 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
             try {
                 response = await fetch(url, options);
             } catch (e) {
-                if (e.code === 'ETIMEDOUT') {
+                if (e.code === 'ETIMEDOUT' || e.cause?.code === 'UND_ERR_CONNECT_TIMEOUT') {
                     if (log) console.log(`node-app-store-connect-api: timed out ${url}`);
                     if (i === retries) throw e;
                     continue;
