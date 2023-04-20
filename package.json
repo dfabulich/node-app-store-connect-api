@@ -1,6 +1,6 @@
 {
   "name": "node-app-store-connect-api",
-  "version": "5.0.1",
+  "version": "5.0.2",
   "description": "Node library to interface with the App Store Connect API",
   "main": "index.mjs",
   "scripts": {
