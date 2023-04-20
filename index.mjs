@@ -52,6 +52,7 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
                 if (e.code === 'ETIMEDOUT') {
                     if (log) console.log(`node-app-store-connect-api: timed out ${url}`);
                     if (i === retries) throw e;
+                    continue;
                 } else {
                     throw e;
                 }
@@ -199,7 +200,7 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
         return postJson(`${data.type}/${data.id}`, body, {version, method: 'PATCH'});
     }
 
-    async function remove(data, {version}) {
+    async function remove(data, {version} = {}) {
         return fetchJson(`${data.type}/${data.id}`, {version, method: 'DELETE'});
     }
 
