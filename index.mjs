@@ -206,7 +206,6 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
 
     async function uploadAsset(assetData, buffer, maxTriesPerPart = 10, version) {
         const targetStart = 0;
-        const sourceFileChecksum = md5(buffer);
         await Promise.all(assetData.attributes.uploadOperations.map(async (uploadOperation, i) => {
             const body = Buffer.alloc(uploadOperation.length);
             const sourceStart = uploadOperation.offset;
@@ -236,7 +235,6 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
         }));
         await update(assetData, { version, attributes: {
             uploaded: true,
-            sourceFileChecksum,
         }});
     }
 
