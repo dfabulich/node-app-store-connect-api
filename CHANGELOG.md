@@ -22,3 +22,11 @@ v5.0:
 * Removed convenience to automatically read the private key from `~/.appstoreconnect` (not compatible with browsers); documented alternative
 * Removed dependency on `node-fetch` (now using `fetch` from global, available in browsers and Node.js 18+)
 * Replaced dependency on `jsonwebtoken` with `jose`, because `jsonwebtoken` doesn't work in browsers and `jose` does
+
+v5.0.3
+* We no longer set `sourceFileChecksum` when uploading files.
+
+    `sourceFileChecksum` is never required, but it is sometimes forbidden. For example, App Previews and App Screenshots allow `sourceFileChecksum`, but Game Center Achievement Images and App Event Screenshots do not.
+
+v5.0.4
+* Bring your own `fetch` implementation by passing a `fetch` parameter to the `api` function.
