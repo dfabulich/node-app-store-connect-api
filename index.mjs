@@ -220,13 +220,16 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
                 // https://developer.apple.com/documentation/appstoreconnectapi/uploading_assets_to_app_store_connect
                 // The provided upload URLs are unauthenticated and time-limited.
                 // You don’t need to supply a JWT; don’t share the URLs.
+                if (logRequests) console.log("node-app-store-connect-api: uploading to",
+                    uploadOperation.url, method, "headers: ", JSON.stringify(headers));
                 const response = await fetch(uploadOperation.url, { method, headers, body });
                 if (response.ok) {
+                    if (logRequests) console.log('node-app-store-connect-api: upload success', response.status, response.statusText, response.headers);
                     break;
                 } else {
                     const errorText = `Failed uploading chunk ${i} of ${assetData.data.type}/${assetData.data.id}: ` +
                         `${response.status} ${response.statusText} ${await response.text()}`;
-                    // console.log(errorText);
+                    if (logRequests) console.log('node-app-store-connect-api:', errorText);
                     if (tries >= maxTriesPerPart) {
                         throw new Error(errorText);
                     }
