@@ -3,7 +3,7 @@ import { SignJWT, importPKCS8 } from 'jose';
 // issuerId and apiKey from https://appstoreconnect.apple.com/access/api
 // p8 file was generated initially, and somebody stored it in ~/.appstoreconnect/private_keys (iTMSTransporter?)
 export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, privateKey, version = 1, urlBase,
-    tokenExpiresInSeconds = 1200, automaticRetries = 10, logRequests = false
+    tokenExpiresInSeconds = 1200, automaticRetries = 10, logRequests = false, fetch = globalThis.fetch
 } = {}) {
     if (!privateKey) throw new Error("You must pass a privateKey parameter");
     if (!urlBase) urlBase = `https://api.appstoreconnect.apple.com`;
