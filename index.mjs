@@ -1,3 +1,4 @@
+import { gunzipSync } from 'node:zlib';
 import { SignJWT, importPKCS8 } from 'jose';
 
 // issuerId and apiKey from https://appstoreconnect.apple.com/access/api
@@ -99,9 +100,12 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
             url = parsed.toString();
         }
         const response = await authFetch(url, options);
-        const text = await response.text();
         const contentType = response.headers.get('content-type');
         const isJson = (contentType === 'application/json' || contentType === 'application/vnd.api+json');
+        const isTsvGzip = contentType === 'application/a-gzip';
+        const text = isTsvGzip ?
+            gunzipSync(new Buffer.from(await response.arrayBuffer())).toString()
+            : await response.text();
         const crawlAllPages = options?.crawlAllPages ?? true;
         if (response.ok) {
             if (isJson) {
@@ -133,6 +137,9 @@ export const api = async function AppStoreConnectApiFetcher({ issuerId, apiKey, 
                 } else {
                     return result.data;
                 }
+            } else if (isTsvGzip) {
+                const [headers, ...rows] = text.split('\n').map(line => line.split('\t'));
+                return { data: rows.map(row => Object.fromEntries(headers.map((header, i) => [header, row[i]]))) };
             } else {
                 return text;
             }
